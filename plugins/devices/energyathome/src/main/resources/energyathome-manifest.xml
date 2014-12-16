@@ -2,7 +2,7 @@
     <properties>
         <property name="description"            value="Energy@Home Plugin"/>
         <property name="protocol.name"		value="energyathome"/>
-        <property name="version"                value="1.0"/>
+        <property name="version"                value="2.0"/>
         <property name="required"               value="5.4"/>
         <property name="category"               value="protocol"/>
         <property name="short-name"             value="energyathome"/>
