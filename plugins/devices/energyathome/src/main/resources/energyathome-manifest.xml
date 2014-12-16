@@ -1,0 +1,13 @@
+<config>
+    <properties>
+        <property name="description"            value="Energy@Home Plugin"/>
+        <property name="protocol.name"		value="energyathome"/>
+        <property name="version"                value="1.0"/>
+        <property name="required"               value="5.4"/>
+        <property name="category"               value="protocol"/>
+        <property name="short-name"             value="energyathome"/>
+        <property name="startup-time" 		value="on load"/>
+        <property name="flexIP"			value="http://localhost:8080/"/> 
+        <property name="pollingtime"		value="2500"/>  
+    </properties>
+</config>
