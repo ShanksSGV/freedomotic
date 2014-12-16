@@ -70,7 +70,6 @@ public class HelloWorld
     protected void onRun() {
         for (EnvObjectLogic thing : thingsRepository.findAll()) {
             LOG.info("HelloWorld sees Thing: " + thing.getPojo().getName());
-            LOG.info("ciao Paolo!");
         }
     }
 
