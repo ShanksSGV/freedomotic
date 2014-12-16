@@ -167,7 +167,6 @@ public class EnergyAtHome extends Protocol {
             notifyEvent(event); // evento per la creazione
         }
         notifyEvent(event); // evento per l'aggiornamento del parametro
-        LOG.log(Level.INFO, event.getPayload().toString());
 
     }
 
