@@ -1,4 +1,4 @@
-<com.freedomotic.model.object.EnvObject>
+<object>
   <name>SmartPlug</name>
   <description>A smartplug</description>
   <actAs>unimplemented</actAs>
@@ -70,4 +70,4 @@
 	<property name="" value="powerUsage"/>
   </triggers>
   <currentRepresentation>1</currentRepresentation>
-</com.freedomotic.model.object.EnvObject>
+</object>
