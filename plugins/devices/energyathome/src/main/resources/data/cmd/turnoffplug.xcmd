@@ -1,0 +1,17 @@
+<com.freedomotic.reactions.Command>
+  <name>Turn off SmartPlug</name>
+  <receiver>app.actuators.protocol.energyathome.in</receiver>
+  <description>A SmartPlug will turn off...</description>
+  <hardwareLevel>true</hardwareLevel>
+  <delay>0</delay>
+  <timeout>0</timeout>
+  <properties>
+    <properties>
+      <property name="protocol" value="energyathome"/>
+      <property name="name" value="@owner.object.name"/> 
+      <property name="identifier" value="@owner.object.address"/>
+      <property name="state" value="OFF"/>
+      <property name="code" value="0" />
+    </properties>
+  </properties>
+</com.freedomotic.reactions.Command>

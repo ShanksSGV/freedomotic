@@ -1,0 +1,16 @@
+<com.freedomotic.reactions.Trigger>
+    <name>Energy@Home device power usage high</name>
+    <description>When power usage is too high... </description>
+    <channel>app.event.sensor.plugin.Energy@Home</channel>
+    <payload>
+         <payload>
+            <statement>
+                <logical>AND</logical>
+                <attribute>protocol</attribute>
+                <operand>EQUALS</operand>
+                <value>Energy@Home</value>
+            </statement>
+        </payload>
+    </payload>
+    <delay>0</delay>
+</com.freedomotic.reactions.Trigger>
