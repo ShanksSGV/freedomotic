@@ -99,8 +99,8 @@ public class EnergyAtHome extends Protocol {
     }
 
     /*
-     * getDevices() prende i devices collegati al flexGW e li registra su Fd; se
-     * l'oggetto non è presente, in questa fase viene creato.
+     * getDevices() gathers devices linked to flexGW and create\synchronize 
+     * them on Freedomotic;  
      */
     protected boolean getDevices() {
         String line = getToFlex(flexIP + "api/devices");
@@ -127,10 +127,8 @@ public class EnergyAtHome extends Protocol {
     }
 
     /*
-     * getType(String address) restituisce il "tipo" di device di un certo
-     * address; su questa base, verrà creato il relativo oggetto FD (se esiste
-     * un adeguato template). La scelta è basata sulla prima function.UID che si
-     * trova.
+     * getType(String address) gives the class of a device, 
+     * in order to create it on Freedomotic
      */
     protected String getType(String address) {
         String line = getToFlex(flexIP + "api/devices/" + address
@@ -149,9 +147,7 @@ public class EnergyAtHome extends Protocol {
 
     /*
      * buildEvent(String name, String address, String property, String value,
-     * String type) genera un evento per l'oggetto caratterizzato dai parametri
-     * passati; se l'oggetto esiste, gli stati vengono sincronizzati altrimenti
-     * l'oggetto viene creato.
+     * String type) generates an event for create/update the object
      */
     protected void buildEvent(String name, String address, String property,
             String value, String type) {
@@ -161,18 +157,13 @@ public class EnergyAtHome extends Protocol {
         event.addProperty("object.address", address);
         event.addProperty("behavior.name", property);
         event.addProperty("behaviorValue", value);
-        if (type != null) {
-            event.addProperty("object.class", type);
-            LOG.log(Level.INFO, event.getPayload().toString());
-            notifyEvent(event); // evento per la creazione
-        }
-        notifyEvent(event); // evento per l'aggiornamento del parametro
-
+        event.addProperty("object.class", type);
+        LOG.log(Level.INFO, event.getPayload().toString());
+        notifyEvent(event); 
     }
 
     /*
-     * getStatus(String address) restituisce lo stato di un dispositivo che
-     * possiede la function OnOff
+     * getStatus(String address) gives device status with OnOff function.UID
      */
     protected boolean getStatus(String address) {
         boolean status = false;
@@ -190,7 +181,7 @@ public class EnergyAtHome extends Protocol {
     }
 
     /*
-     * Funzione generica per fare una GET al FlexGW
+     * GET to the flexGW
      */
     private String getToFlex(String urlToInvoke) {
         String line = null;
@@ -211,7 +202,7 @@ public class EnergyAtHome extends Protocol {
     }
 
     /*
-     * Funzione generica per fare una POST al FlexGW
+     * POST to the flexGW
      */
     private String postToFlex(String urlToInvoke, String body) {
         try {
