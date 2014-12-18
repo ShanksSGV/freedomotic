@@ -20,6 +20,9 @@ import com.freedomotic.events.ProtocolRead;
 import com.freedomotic.reactions.Command;
 import com.freedomotic.things.EnvObjectLogic;
 import com.freedomotic.things.ThingRepository;
+
+import com.freedomotic.plugins.devices.jscube.energyathome.enums.*;
+
 import com.google.inject.Inject;
 
 public class EnergyAtHome extends Protocol {
@@ -32,6 +35,7 @@ public class EnergyAtHome extends Protocol {
 
     protected String flexIP = configuration.getProperty("flexIP");
     private final String protocolName = configuration.getProperty("protocol.name");
+    
     private final int POLLING_TIME = configuration
             .getIntProperty("pollingtime", 1000);
 
@@ -90,7 +94,7 @@ public class EnergyAtHome extends Protocol {
                     JSONObject json = new JSONObject(line);
                     Double value = json.getJSONObject("result").getDouble("level");
                     LOG.log(Level.INFO, "Object {0}is consuming: {1}W", new Object[]{address, value});
-                    buildEvent(name, address, "powerUsage", String.valueOf(value), null);
+                    buildEvent(name, address, Behaviors.POWER_CONSUMPTION, String.valueOf(value), null);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -114,7 +118,7 @@ public class EnergyAtHome extends Protocol {
                 LOG.log(Level.INFO, "...Synchronizing object {0} {1}", new Object[]{type, address});
                 if (type.equalsIgnoreCase("OnOff")) {
                     String status = String.valueOf(getStatus(address));
-                    buildEvent(name, address, "powered", status, "SmartPlug");
+                    buildEvent(name, address, Behaviors.POWERED , status, "SmartPlug");
                 }
             }
             return true;
@@ -149,13 +153,13 @@ public class EnergyAtHome extends Protocol {
      * buildEvent(String name, String address, String property, String value,
      * String type) generates an event for create/update the object
      */
-    protected void buildEvent(String name, String address, String property,
+    protected void buildEvent(String name, String address, Behaviors property,
             String value, String type) {
         ProtocolRead event = new ProtocolRead(this, protocolName, address);
         event.addProperty("object.name", name);
         event.addProperty("object.protocol", protocolName);
         event.addProperty("object.address", address);
-        event.addProperty("behavior.name", property);
+        event.addProperty("behavior.name", property.toString());
         event.addProperty("behaviorValue", value);
         event.addProperty("object.class", type);
         LOG.log(Level.INFO, event.getPayload().toString());
