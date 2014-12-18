@@ -1,0 +1,11 @@
+<config>
+    <properties>
+        <property name="name" value="smartplug"/>
+        <property name="description" value="A SmartPlug for Energy@Home trial"/>
+        <property name="version" value="2.0.0"/>
+        <property name="category" value="category"/>
+        <property name="short-name" value="smartplug"/>
+    </properties>
+</config>
+
+                
