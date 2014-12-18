@@ -26,9 +26,9 @@ import com.freedomotic.model.ds.Config;
 import com.freedomotic.model.object.BooleanBehavior;
 import com.freedomotic.model.object.ListBehavior;
 import com.freedomotic.model.object.RangedIntBehavior;
-import com.freedomotic.things.BooleanBehaviorLogic;
-import com.freedomotic.things.ListBehaviorLogic;
-import com.freedomotic.things.RangedIntBehaviorLogic;
+import com.freedomotic.behaviors.BooleanBehaviorLogic;
+import com.freedomotic.behaviors.ListBehaviorLogic;
+import com.freedomotic.behaviors.RangedIntBehaviorLogic;
 import com.freedomotic.reactions.CommandPersistence;
 import com.freedomotic.reactions.Command;
 

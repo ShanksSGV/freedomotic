@@ -1,0 +1,9 @@
+<config>
+    <properties>
+        <property name="description"                       value="Control your home with Thalmic Myo armband"/>
+        <property name="category"                       value="devel"/>
+        <property name="short-name"                       value="thalmic"/>
+    </properties>
+</config>
+
+                
