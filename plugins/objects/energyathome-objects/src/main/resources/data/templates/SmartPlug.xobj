@@ -1,10 +1,6 @@
 <object>
   <name>SmartPlug</name>
-<<<<<<< HEAD
   <description>An Energy@Home Smart Plug</description>
-=======
-  <description>A smartplug</description>
->>>>>>> 65805c9f65cb4c2750e0631115215fe449d1efc2
   <actAs>unimplemented</actAs>
   <type>EnvObject.ElectricDevice.SmartPlug</type>
   <hierarchy>com.freedomotic.things.impl.ElectricDevice</hierarchy>
@@ -71,7 +67,7 @@
   </actions>
   <triggers>
     <property name="" value="powered"/>
-	<property name="" value="power_consumption"/>
+    <property name="" value="power_consumption"/>
   </triggers>
-  <currentRepresentation>1</currentRepresentation>
+  <currentRepresentation>0</currentRepresentation>
 </object>
