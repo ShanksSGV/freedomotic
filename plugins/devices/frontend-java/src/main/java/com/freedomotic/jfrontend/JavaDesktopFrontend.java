@@ -253,12 +253,16 @@ public class JavaDesktopFrontend extends Protocol {
 //    //annotation doesen't work because annotation parsing is enabled only in Protocol subclasses
 //    @ListenEventsOn(channel = "app.event.sensor.messages.callout")
     public void printCallout(String message) {
-        Callout callout = new Callout(
-                message,
-                3400,
-                Color.blue);
-        drawer.createCallout(callout);
-        drawer.setNeedRepaint(true);
+        try {
+            Callout callout = new Callout(
+                    message,
+                    3400,
+                    Color.blue);
+            drawer.createCallout(callout);
+            drawer.setNeedRepaint(true);
+        } catch (Exception e) {
+            LOG.warning("Error while printing a callout on frontend. This callout is ignored");
+        }
     }
 
     @Override

@@ -7,7 +7,11 @@
         <property name="version" value="1.0.0"/>
         <property name="required" value="5.1.0"/>
         <property name="category" value="category"/>
+<<<<<<< HEAD
         <property name="short-name" value="energyathome"/>
+=======
+        <property name="short-name" value="shortname"/>
+>>>>>>> 65805c9f65cb4c2750e0631115215fe449d1efc2
     </properties>
 </config>
 
