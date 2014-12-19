@@ -1,6 +1,6 @@
 <object>
   <name>SmartPlug</name>
-  <description>A smartplug</description>
+  <description>An Energy@Home Smart Plug</description>
   <actAs>unimplemented</actAs>
   <type>EnvObject.ElectricDevice.SmartPlug</type>
   <hierarchy>com.freedomotic.things.impl.ElectricDevice</hierarchy>
