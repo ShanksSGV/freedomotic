@@ -23,12 +23,13 @@ public class FDWebEnvironment extends DefaultWebEnvironment {
     public FDWebEnvironment() {
         BasicHttpAuthenticationFilter authc = new CorsBasicHttpAuthenticationFilter();
         LogoutFilter logout = new LogoutFilter();
-
+        logout.setRedirectUrl("http://www.freedomotic.com/");
+        
         FilterChainManager fcMan = new DefaultFilterChainManager();
         fcMan.addFilter("authc", authc);
         fcMan.addFilter("logout", logout);
-        fcMan.createChain("/logout", "logout");
-        fcMan.createChain("/**", "authc");
+        fcMan.createChain("/auth/logout", "logout");
+        fcMan.createChain("/v3/**", "authc");
 
         PathMatchingFilterChainResolver resolver = new PathMatchingFilterChainResolver();
         resolver.setFilterChainManager(fcMan);

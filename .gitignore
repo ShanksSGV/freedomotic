@@ -10,7 +10,6 @@ nbactions.xml
 nb-configuration.xml
 findbugs.settings
 pmd.setting
-PACKAGE
 
 # Java specific #
 #################
@@ -73,6 +72,7 @@ log/
 # Maven #
 #########
 target/
+*.versionsBackup
 
 #IntelliJ#
 *.iml

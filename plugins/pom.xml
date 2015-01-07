@@ -1,0 +1,182 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                      http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>freedomotic-plugins</artifactId>
+    <name>Freedomotic Plugins</name>
+    <description>Official Freedomotic Plugins</description>
+    <url>http://freedomotic.com</url>
+    <inceptionYear>2009</inceptionYear>
+    <packaging>pom</packaging>
+
+    <parent>
+        <groupId>com.freedomotic</groupId>
+        <artifactId>freedomotic</artifactId>
+        <version>5.6-SNAPSHOT</version>
+        <relativePath>../</relativePath>
+    </parent>
+    
+    <properties>
+        <freedomotic.basedir>${basedir}/..</freedomotic.basedir>
+        <maven.build.timestamp.format>yyyyMMdd-HHmm</maven.build.timestamp.format>
+    </properties>
+
+    <profiles>
+        <!-- Uploads a plugin to the official freedomotic marketplace
+        USAGE: mvn deploy -P market -D username="YOUR_USERNAME" -D password="YOUR_PASSWORD" -->
+        <profile>
+            <id>market</id>
+            <properties>
+                <!--skip deployment to remote repository, publish on marketplace only-->
+                <maven.deploy.skip>true</maven.deploy.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.7</version>
+                        <executions>
+                            <execution>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo>Uploading file target/market-dist/${freedomotic.marketplace.file} to marketplace</echo>
+                                        <!-- create a temp folder in which constructing the archive, then compress it-->
+                                        <delete dir="target/market-dist/${project.artifactId}"/>
+                                        <mkdir dir="target/market-dist/${project.artifactId}/${project.artifactId}"/>
+                                        <copy todir="target/market-dist/${project.artifactId}/${project.artifactId}" includeEmptyDirs="false">
+                                            <fileset dir="target/${project.artifactId}">
+                                            </fileset>
+                                        </copy>
+                                        <zip destfile="target/market-dist/${freedomotic.marketplace.file}"
+                                             basedir="target/market-dist/${project.artifactId}" />
+                                        <property name="workspace-base" value="../../../"/>
+                                        <taskdef
+                                            name="marketplace"
+                                            classname="com.freedomotic.marketplace.AntUploader" >
+                                            <classpath>
+                                                <pathelement location="../../../tools/freedomotic-drupal-marketplace/target/freedomotic-drupal-marketplace-3.0-jar-with-dependencies.jar"/>
+                                                <pathelement location="../../../framework/freedomotic-core/target/freedomotic-core/freedomotic.jar"/>
+                                            </classpath>
+                                        </taskdef>
+                                        <!-- If the username or the password are not passed as parameters, ask for them -->
+                                        <marketplace
+                                            username="${username}"
+                                            password="${password}"
+                                            nodeid="${freedomotic.nodeid}"
+                                            attachment="target/market-dist/"
+                                        />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+  
+
+    <!-- Build Configuration -->
+    <build>
+        <!-- Preconfigure this plugins for child projects (called if the child have specified it in its pom)-->
+        <pluginManagement>
+            <plugins>
+                <!-- Special resources processing for plugins -->
+                <plugin>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>2.6</version>
+                    <executions>
+                        <execution>
+                            <id>copy-resources</id>
+                            <phase>prepare-package</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${basedir}/target/${project.artifactId}</outputDirectory>
+                                <resources>
+                                    <!-- regular resource processsing for everything except data.xml, README and PACKAGE -->
+                                    <resource>
+                                        <directory>src/main/resources</directory>
+                                        <excludes>
+                                            <exclude>data/**</exclude>
+                                            <exclude>*.xml</exclude>
+                                            <exclude>README</exclude>
+                                            <exclude>PACKAGE</exclude>
+                                        </excludes>
+                                    </resource>
+                                    <!-- resource processsing with a different output directory
+                                    for everything except data.xml, README and PACKAGE -->
+                                    <resource>
+                                        <directory>src/main/resources</directory>
+                                        <includes>
+                                            <include>data/**</include>
+                                            <include>*.xml</include>
+                                        </includes>
+                                        <targetPath>../${project.artifactId}</targetPath>
+                                    </resource>
+                                    <!-- Copy and process the commons templates for README and PACKAGE (path is relative to the plugin pom file) -->
+                                    <resource>
+                                        <directory>../../../scripts/assets</directory>
+                                        <includes>
+                                            <include>README</include>
+                                            <include>PACKAGE</include>
+                                        </includes>
+                                        <filtering>true</filtering>
+                                        <targetPath>../${project.artifactId}</targetPath>
+                                    </resource>
+                                </resources>            
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>2.4</version>
+                    <configuration>
+                        <outputDirectory>${project.build.directory}/${project.artifactId}</outputDirectory>
+                        <archive>
+                            <manifest>
+                                <addClasspath>true</addClasspath>
+                                <useUniqueVersions>false</useUniqueVersions> 
+                                <classpathPrefix>lib/</classpathPrefix>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.7</version>
+                    <executions>
+                        <execution>
+                            <phase>install</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <echo>Installing '${project.name}' plugin into freedomotic</echo>
+                                    <!--clean up the installation folder-->
+                                    <delete quiet="true">
+                                        <fileset dir="${freedomotic.synch.dist.path}/${freedomotic.package.type}s/${project.artifactId}"/>
+                                    </delete>
+                                    <!--copy the plugin-->
+                                    <copy todir="${freedomotic.synch.dist.path}/${freedomotic.package.type}s/${project.artifactId}" >  
+                                        <fileset dir="target/${project.artifactId}" includes="**"/>  
+                                    </copy>
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

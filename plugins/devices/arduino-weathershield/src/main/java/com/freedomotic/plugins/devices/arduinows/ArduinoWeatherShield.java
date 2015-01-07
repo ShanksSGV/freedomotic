@@ -21,13 +21,15 @@ package com.freedomotic.plugins.devices.arduinows;
 
 import com.freedomotic.api.EventTemplate;
 import com.freedomotic.api.Protocol;
-import com.freedomotic.app.Freedomotic;
 import com.freedomotic.events.ProtocolRead;
+import com.freedomotic.exceptions.PluginRuntimeException;
+import com.freedomotic.exceptions.PluginStartupException;
 import com.freedomotic.exceptions.UnableToExecuteException;
+import com.freedomotic.helpers.HttpHelper;
 import com.freedomotic.reactions.Command;
 import java.io.*;
-import java.net.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,54 +41,30 @@ import java.util.logging.Logger;
 public class ArduinoWeatherShield extends Protocol {
 
     private static final Logger LOG = Logger.getLogger(ArduinoWeatherShield.class.getName());
-    private static int POLLING_TIME = 10000;
-    private int SOCKET_TIMEOUT = 10000;
-    private static String IP_TO_QUERY;
-    private static String DELIMITER;
-    private static int PORT_TO_QUERY;
-    private static int BOARD_NUMBER;
-    private static ArrayList<Board> boards = null;
-    private String response = null;
-    private boolean connected = false;
-    private Socket socket = null;
-    private DataOutputStream outputStream = null;
-    private BufferedReader inputStream = null;
+    private final int POLLING_TIME = configuration.getIntProperty("time-between-reads", 1000);
+    private final String DELIMITER = configuration.getStringProperty("address-delimiter", "|");
+    ;
+    private final int TUPLES_COUNT = configuration.getTuples().size();
+    private List<Board> boards = new ArrayList<>();
+    private HttpHelper http = new HttpHelper();
 
     public ArduinoWeatherShield() {
-        super("Arduino WeatherShield", "/arduinows/arduinows-manifest.xml");
+        super("Arduino WeatherShield", "/arduino-weathershield/arduinows-manifest.xml");
     }
 
-    private void loadBoards() {
-        if (boards == null) {
-            boards = new ArrayList<Board>();
-        }
-        for (int i = 0; i < BOARD_NUMBER; i++) {
-            IP_TO_QUERY = configuration.getTuples().getStringProperty(i, "ip-to-query", "192.168.1.201");
-            PORT_TO_QUERY = configuration.getTuples().getIntProperty(i, "port-to-query", 80);
-            POLLING_TIME = configuration.getTuples().getIntProperty(i, "polling-time", 1000);
-            SOCKET_TIMEOUT = configuration.getTuples().getIntProperty(i, "socket-timeout", 1000);
-            DELIMITER = configuration.getTuples().getStringProperty(i, "delimiter", "|");
-            Board board = new Board(IP_TO_QUERY, PORT_TO_QUERY, POLLING_TIME, SOCKET_TIMEOUT, DELIMITER);
-            boards.add(board);
-        }
-
-    }
-
-    /**
-     * Sensor side
-     */
     @Override
-    public void onStart() {
-        super.onStart();
-        POLLING_TIME = configuration.getIntProperty("time-between-reads", 1000);
-        BOARD_NUMBER = configuration.getTuples().size();
+    public void onStart() throws PluginStartupException {
         setPollingWait(POLLING_TIME);
+        http.setConnectionTimeout(5000);
         loadBoards();
+        if (boards.isEmpty()) {
+            throw new PluginStartupException("No boards defined in confguration file or configuration format is wrong");
+        }
+        setDescription(boards.size() + " board(s) configured");
     }
 
     @Override
     public void onStop() {
-        super.onStop();
         //release resources
         boards.clear();
         boards = null;
@@ -96,103 +74,103 @@ public class ArduinoWeatherShield extends Protocol {
     }
 
     @Override
-    protected void onRun() {
+    protected void onRun() throws PluginRuntimeException {
         for (Board board : boards) {
             try {
-                getParametersValue(board);
-            } catch (UnableToExecuteException ex) {
-                Logger.getLogger(ArduinoWeatherShield.class.getName()).log(Level.SEVERE, null, ex);
+                readValues(board);
             } catch (IOException ex) {
-                Logger.getLogger(ArduinoWeatherShield.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            try {
-                Thread.sleep(POLLING_TIME);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(ArduinoWeatherShield.class.getName()).log(Level.SEVERE, null, ex);
+                //TODO: implement a retry to connect mechanism with a max failures counter (in a separate method)
+                throw new PluginRuntimeException("Cannot connect to Arduino Weathershiled board at " 
+                        + board.getIpAddress() + ":" + board.getPort(), ex);
             }
         }
     }
 
-    private void connect(String address, int port) {
-        connected = false;
-        LOG.info("Trying to connect to Arduino WeatherShield on address " + address + ':' + port);
-        try {
-            //TimedSocket is a non-blocking socket with timeout on exception
-            socket = TimedSocket.getSocket(address, port, SOCKET_TIMEOUT);
-            socket.setSoTimeout(SOCKET_TIMEOUT); //SOCKET_TIMEOUT ms of waiting on socket read/write
-            BufferedOutputStream buffOut = new BufferedOutputStream(socket.getOutputStream());
-            outputStream = new DataOutputStream(buffOut);
-        } catch (IOException e) {
-            connected = false;
-            LOG.severe("Unable to connect to host " + address + " on port " + port);
+    private void loadBoards() {
+        if (boards == null) {
+            boards = new ArrayList<>();
         }
-        connected = true;
-    }
-
-    private void disconnect() {
-        // close streams and socket
-        try {
-            inputStream.close();
-            outputStream.close();
-            socket.close();
-            connected = false;
-        } catch (Exception ex) {
-            //do nothing. Best effort
+        for (int i = 0; i < TUPLES_COUNT; i++) {
+            // filter the tuples with "object.class" property
+            String result = configuration.getTuples().getProperty(i, "object.class");
+            // if the tuple hasn't an "object.class" property it's a board configuration one
+            if (result == null) {
+                String IP_TO_QUERY = configuration.getTuples().getStringProperty(i, "ip-to-query", "192.168.0.150");
+                int PORT_TO_QUERY = configuration.getTuples().getIntProperty(i, "port-to-query", 80);
+                Board board = new Board(IP_TO_QUERY, PORT_TO_QUERY);
+                LOG.log(Level.INFO, "Arduino Weathershield board configured to be"
+                        + " queried at {0}:{1}", new Object[]{IP_TO_QUERY, PORT_TO_QUERY});
+                boards.add(board);
+            }
         }
     }
 
-    private void getParametersValue(Board board) throws UnableToExecuteException, IOException {
-        String parametersValue = null;
-        //connect to Arduino
+    private void readValues(Board board) throws IOException {
+        String urlString = "http://" + board.getIpAddress() + ":" + board.getPort();
+        String data = http.retrieveContent(urlString);
+        LOG.log(Level.CONFIG, "Read data from Arduino Weathershlied: {0}", data);
         try {
-            connect(board.getIpAddress(), board.getPort());
-        } catch (ArrayIndexOutOfBoundsException outEx) {
-            LOG.severe("The address '" + board.getIpAddress() + "' is not properly formatted. Check it!");
-            throw new UnableToExecuteException();
-        } catch (NumberFormatException numberFormatException) {
-            LOG.severe(board.getIpAddress() + " is not a valid ethernet port to connect to");
-            throw new UnableToExecuteException();
+            notifyReadValues(board, data);
+        } catch (IllegalArgumentException ex) {
+            notifyCriticalError("Error while notifying Arduino Weathershield data", ex);
         }
+    }
 
-        if (connected) {
-            // request for sensors values
-            String message = "GET / HTTP 1.1\r\n\r\n";
-            if (outputStream != null) {
-                outputStream.writeBytes(message);
-                outputStream.flush();
-                inputStream = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                try {
-                    parametersValue = inputStream.readLine(); // read device reply
-                    sendChanges(board, parametersValue);
-                } catch (IOException iOException) {
-                    throw new IOException();
-                } finally {
-                    disconnect();
+    private void notifyReadValues(Board board, String parametersValue) throws IllegalArgumentException {
+        String address = board.getIpAddress() + DELIMITER + board.getPort();
+        String values[] = parametersValue.split(DELIMITER);
+
+        if (!(values.length == 3)) {
+            throw new IllegalArgumentException("Cannot parse string " + parametersValue
+                    + " to extract three numeric values separated by '" + DELIMITER + "'");
+        } else {
+            for (int i = 0; i < 3; i++) {
+                if (!isNumber(values[i])) {
+                    throw new IllegalArgumentException("Error while parsing string '"
+                            + parametersValue + "'" + values[i] + "' is not a number");
                 }
-            } else {
-                throw new UnableToExecuteException();
             }
         }
-    }
 
-    private void sendChanges(Board board, String parametersValue) {
-        String address = board.getIpAddress() + ":" + board.getPort();
-        //Freedomotic.logger.severe("Sending Arduino WeatherShield protocol read event for board '" + address + "'");
-        String values[] = parametersValue.split(board.getDelimiter());
         //building the event
-        ProtocolRead event = new ProtocolRead(this, "ArduinoWeatherShield", address); //IP:PORT
+        ProtocolRead event = new ProtocolRead(this, "arduino-weathershield", address + DELIMITER + "T");
         //adding some optional information to the event
-        event.addProperty("boardIP", board.getIpAddress());
-        event.addProperty("boardPort", new Integer(board.getPort()).toString());
+        event.addProperty("board.ip", board.getIpAddress());
+        event.addProperty("board.port", Integer.toString(board.getPort()));
         event.addProperty("sensor.temperature", values[0]);
+        event.addProperty("object.class", "Thermometer");
+        event.addProperty("object.name", "Arduino WeatherShield Thermometer");
+        //publish the event on the messaging bus
+        this.notifyEvent(event);
+
+        event = new ProtocolRead(this, "arduino-weathershield", address + DELIMITER + "P");
+        //adding some optional information to the event
+        event.addProperty("board.ip", board.getIpAddress());
+        event.addProperty("board.port", Integer.toString(board.getPort()));
         event.addProperty("sensor.pressure", values[1]);
+        event.addProperty("object.class", "Barometer");
+        event.addProperty("object.name", "Arduino WeatherShield Barometer");
+        //publish the event on the messaging bus
+        this.notifyEvent(event);
+
+        event = new ProtocolRead(this, "arduino-weathershield", address + DELIMITER + "H");
+        //adding some optional information to the event
+        event.addProperty("board.ip", board.getIpAddress());
+        event.addProperty("board.port", Integer.toString(board.getPort()));
         event.addProperty("sensor.humidity", values[2]);
+        event.addProperty("object.class", "Hygrometer");
+        event.addProperty("object.name", "Arduino WeatherShield Hygrometer");
         //publish the event on the messaging bus
         this.notifyEvent(event);
     }
 
+    private boolean isNumber(String stringNumber) {
+        //TODO: this regex is far from being precise, test it with http://www.regexr.com/
+        return stringNumber.matches("-?\\d+(\\.\\d+)?");
+    }
+
     @Override
-    protected void onCommand(Command c) throws IOException, UnableToExecuteException {
+    protected void onCommand(Command c) throws UnableToExecuteException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
