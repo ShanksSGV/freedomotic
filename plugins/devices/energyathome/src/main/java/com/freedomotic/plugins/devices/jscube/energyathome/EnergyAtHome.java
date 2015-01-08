@@ -1,27 +1,24 @@
 /**
  *
  * Copyright (c) 2009-2014 Freedomotic team, 2014 Telecom Italia
- * @author: Ing. Danny Noferi, SI.IIR.OIR, Joint Open Lab S-Cube 
- * 
- * This file is part of Freedomotic
- * http://www.freedomotic.com
  *
- * This Program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
+ * @author: Ing. Danny Noferi, SI.IIR.OIR, Joint Open Lab S-Cube
  *
- * This Program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * This file is part of Freedomotic http://www.freedomotic.com
  *
- * You should have received a copy of the GNU General Public License
- * along with Freedomotic; see the file COPYING.  If not, see
+ * This Program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2, or (at your option) any later version.
+ *
+ * This Program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * Freedomotic; see the file COPYING. If not, see
  * <http://www.gnu.org/licenses/>.
  */
-
-
 package com.freedomotic.plugins.devices.jscube.energyathome;
 
 import java.io.BufferedReader;
@@ -60,8 +57,8 @@ public class EnergyAtHome extends Protocol {
 
     private final String flexIP = configuration.getProperty("flexIP");
     private final String protocolName = configuration.getProperty("protocol.name");
-    private final int POLLING_TIME = configuration.getIntProperty("pollingtime", 1000);
-    
+    private final int POLLING_TIME = configuration.getIntProperty("pollingtime", 5000);
+
     // Stores the count of subsequent API connection failures
     private int connectionFailuresCount = 0;
     // Max allowed API connection attempts before making the plugin as FAILED
@@ -122,29 +119,41 @@ public class EnergyAtHome extends Protocol {
 
     @Override
     protected void onRun() {
-        for (EnvObjectLogic thing : thingsRepository.findAll()) {
-            if (thing.getPojo().getProtocol().equals(protocolName)) {
-                String address = thing.getPojo().getPhisicalAddress();
-                String name = thing.getPojo().getName();
-                String body = "{\"operation\":\"getCurrent\"}";
-
-                String line;
-                try {
-                    line = postToFlex(
-                            flexIP + "api/functions/" + address + ":EnergyMeter", body);
-                    try {
-                        JSONObject json = new JSONObject(line);
-                        Double value = json.getJSONObject("result").getDouble("level");
-                        LOG.log(Level.INFO, "Object {0}is consuming: {1}W", new Object[]{address, value});
-                        buildEvent(name, address, Behaviors.POWER_CONSUMPTION, String.valueOf(value), null);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+        for (EnvObjectLogic thing : thingsRepository.findByProtocol(protocolName)) {
+            String address = thing.getPojo().getPhisicalAddress();
+            String name = thing.getPojo().getName();
+            try {
+                String type = getType(address);
+                if (type.equalsIgnoreCase("OnOff")) {
+                    //object is a SmartPlug
+                    String status = String.valueOf(getStatus(address));
+                    
+                    /**
+                     * this part can be improved using webSubscription (to update
+                     * POWERED status of the PLUG) instead of this polling...
+                    */
+                   
+                    buildEvent(name, address, Behaviors.POWERED, status, "SmartPlug");
+                    if (status.equalsIgnoreCase("true")){
+                        //if SmartPlug is on
+                        String body = "{\"operation\":\"getCurrent\"}";
+                        String line = postToFlex(
+                                flexIP + "api/functions/" + address + ":EnergyMeter", body);
+                        try {
+                            JSONObject json = new JSONObject(line);
+                            Double value = json.getJSONObject("result").getDouble("level");
+                            LOG.log(Level.INFO, "Object {0}is consuming: {1}W", new Object[]{address, value});
+                            buildEvent(name, address, Behaviors.POWER_CONSUMPTION, String.valueOf(value), null);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
-                } catch (IOException ex) {
-                    manageConnectionFailure();
                 }
-
+                //else if() for other object types...
+            } catch (IOException ex) {
+                manageConnectionFailure();
             }
+            
         }
     }
 
@@ -160,11 +169,11 @@ public class EnergyAtHome extends Protocol {
             this.notifyCriticalError("Too many API connection failures (" + connectionFailuresCount + " failures)");
         }
     }
-    /**
-     * getDevices() gathers devices linked to flexGW and create\synchronize 
-     * them on Freedomotic;  
-     */
 
+    /**
+     * getDevices() gathers devices linked to flexGW and create\synchronize them
+     * on Freedomotic;
+     */
     protected boolean getDevices() throws IOException {
         String line = getToFlex(flexIP + "api/devices");
         try {
@@ -191,8 +200,8 @@ public class EnergyAtHome extends Protocol {
     }
 
     /**
-     * getType(String address) gives the class of a device, 
-     * in order to create it on Freedomotic
+     * getType(String address) gives the class of a device, in order to create
+     * it on Freedomotic
      */
     protected String getType(String address) throws IOException {
         String line = getToFlex(flexIP + "api/devices/" + address
@@ -200,7 +209,8 @@ public class EnergyAtHome extends Protocol {
         try {
             JSONArray json = new JSONArray(line);
             String[] temp = json.getJSONObject(0).getString("dal.function.UID")
-                    .split(":");
+                    .split(":"); 
+        //it takes the FIRST dal.function.UID. NB TBD a better method...
             String type = temp[temp.length - 1];
             return type;
         } catch (JSONException e) {
