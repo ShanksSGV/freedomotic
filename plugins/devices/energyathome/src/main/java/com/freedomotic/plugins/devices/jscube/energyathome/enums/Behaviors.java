@@ -23,7 +23,7 @@
 
 package com.freedomotic.plugins.devices.jscube.energyathome.enums;
 
-public enum Behaviors {
+public enum Behaviors { //taken from energy@home object templates
     POWERED,
     POWER_CONSUMPTION,
 }
