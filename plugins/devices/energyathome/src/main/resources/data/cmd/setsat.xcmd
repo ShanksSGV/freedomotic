@@ -1,7 +1,7 @@
 <com.freedomotic.reactions.Command>
-  <name>Turn off SmartPlug</name>
+  <name>Set Color Light saturation</name>
   <receiver>app.actuators.protocol.energyathome.in</receiver>
-  <description>A SmartPlug will turn off...</description>
+  <description>Changin hue of an E@H Color Light</description>
   <hardwareLevel>true</hardwareLevel>
   <delay>0</delay>
   <timeout>0</timeout>
@@ -10,8 +10,8 @@
       <property name="protocol" value="energyathome"/>
       <property name="name" value="@owner.object.name"/> 
       <property name="identifier" value="@owner.object.address"/>
-      <property name="state" value="OFF"/>
-      <property name="code" value="0" />
+      <property name="value" value="@request.value"/>
+      <property name="code" value="1" />
     </properties>
   </properties>
 </com.freedomotic.reactions.Command>

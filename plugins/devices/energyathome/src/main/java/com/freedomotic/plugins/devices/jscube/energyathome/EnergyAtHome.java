@@ -96,18 +96,42 @@ public class EnergyAtHome extends Protocol {
 
     @Override
     protected void onCommand(Command c) {
-        if (c.getProperty("code").equals("0")) {
-            String body;
-            if (c.getProperty("state").equals("ON")) {
-                body = "{\"operation\":\"setTrue\"}";
-            } else {
-                body = "{\"operation\":\"setFalse\"}";
+        String body = null;
+        switch (c.getProperty("code")) {
+            case "0": {
+                if (c.getProperty("state").equals("ON")) {
+                    body = "{\"operation\":\"setTrue\"}";
+                } else {
+                    body = "{\"operation\":\"setFalse\"}";
+                }
+                try {
+                    postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
+                            + ":OnOff", body);
+                } catch (IOException ex) {
+                    manageConnectionFailure();
+                }
+                break;
             }
-            try {
-                postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                        + ":OnOff", body);
-            } catch (IOException ex) {
-                manageConnectionFailure();
+            case "1": {
+                String hue = null, sat = null;
+                if (c.getName().contains("hue")) {
+                    hue = c.getProperty("value");
+                    sat = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Behaviors.saturation.toString()).getValueAsString();
+                } else if (c.getName().contains("saturation")) {
+                    hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Behaviors.hue.toString()).getValueAsString();
+                    sat = c.getProperty("value");
+                } else if (c.getName().contains("brightness")) {
+                    LOG.log(Level.INFO, "Command not supported!");
+                }
+                body = "{\"operation\":\"setHS\",\"arguments\":[{\"type\":\"java.lang.Short\",\"value\":\""
+                            + hue + "\"},{\"type\":\"java.lang.Short\",\"value\":\"" + sat + "\"}]}";
+                LOG.log(Level.INFO, body);
+                try {
+                    postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
+                            + ":ColorControl", body);
+                } catch (IOException ex) {
+                    manageConnectionFailure();
+                }
             }
         }
     }
@@ -127,14 +151,14 @@ public class EnergyAtHome extends Protocol {
                 if (type.equalsIgnoreCase("OnOff")) {
                     //object is a SmartPlug
                     String status = String.valueOf(getStatus(address));
-                    
+
                     /**
-                     * this part can be improved using webSubscription (to update
-                     * POWERED status of the PLUG) instead of this polling...
-                    */
-                   
-                    buildEvent(name, address, Behaviors.POWERED, status, "SmartPlug");
-                    if (status.equalsIgnoreCase("true")){
+                     * this part can be improved using webSubscription (to
+                     * update POWERED status of the PLUG) instead of this
+                     * polling...
+                     */
+                    buildEvent(name, address, Behaviors.powered, status, "SmartPlug");
+                    if (status.equalsIgnoreCase("true")) {
                         //if SmartPlug is on
                         String body = "{\"operation\":\"getCurrent\"}";
                         String line = postToFlex(
@@ -143,7 +167,7 @@ public class EnergyAtHome extends Protocol {
                             JSONObject json = new JSONObject(line);
                             Double value = json.getJSONObject("result").getDouble("level");
                             LOG.log(Level.INFO, "Object {0}is consuming: {1}W", new Object[]{address, value});
-                            buildEvent(name, address, Behaviors.POWER_CONSUMPTION, String.valueOf(value), null);
+                            buildEvent(name, address, Behaviors.power_consumption, String.valueOf(value), null);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -153,7 +177,7 @@ public class EnergyAtHome extends Protocol {
             } catch (IOException ex) {
                 manageConnectionFailure();
             }
-            
+
         }
     }
 
@@ -184,10 +208,12 @@ public class EnergyAtHome extends Protocol {
                 String name = json.getJSONObject(i).getString("component.name");
                 String type = getType(address);
                 LOG.log(Level.INFO, "...Synchronizing object {0} {1}", new Object[]{type, address});
-                if (type.equalsIgnoreCase("OnOff")) {
+                if (type.equalsIgnoreCase(DalFunctionUID.OnOff.toString())) {
                     String status = String.valueOf(getStatus(address));
-                    buildEvent(name, address, Behaviors.POWERED, status, "SmartPlug");
-
+                    buildEvent(name, address, Behaviors.powered, status, "SmartPlug");
+                } else if (type.equalsIgnoreCase(DalFunctionUID.ColorControl.toString())) {
+                    String status = String.valueOf(getStatus(address));
+                    buildEvent(name, address, Behaviors.powered, status, "Color Light");
                 }
             }
             return true;
@@ -209,8 +235,8 @@ public class EnergyAtHome extends Protocol {
         try {
             JSONArray json = new JSONArray(line);
             String[] temp = json.getJSONObject(0).getString("dal.function.UID")
-                    .split(":"); 
-        //it takes the FIRST dal.function.UID. NB TBD a better method...
+                    .split(":");
+            //it takes the FIRST dal.function.UID. NB TBD a better method...
             String type = temp[temp.length - 1];
             return type;
         } catch (JSONException e) {

@@ -23,10 +23,15 @@
 
 package com.freedomotic.plugins.devices.jscube.energyathome.enums;
 
-public enum Behaviors { //taken from energy@home object templates
-    powered,
-    power_consumption,
-    saturation,
-    hue,
-    brightness;
+public enum DalFunctionUID { //taken from https://github.com/ismb/jemma/wiki/JEMMA-DAL-APIs-functions
+    OnOff,
+    EnergyMeter,
+    DoorLock,
+    WindowCovering,
+    ColorControl,
+    MultiLevelControl,
+    WashingMachine,
+    Fridge,
+    Oven,
+    PowerProfile,
 }

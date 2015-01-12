@@ -62,8 +62,8 @@
     </view>
   </representation>
   <actions>
-    <property name="turn off" value="Turn off SmartPlug"/>
-    <property name="turn on" value="Turn on SmartPlug"/>
+    <property name="turn off" value="Turn off E@H device"/>
+    <property name="turn on" value="Turn on E@H device"/>
   </actions>
   <triggers>
     <property name="" value="powered"/>
