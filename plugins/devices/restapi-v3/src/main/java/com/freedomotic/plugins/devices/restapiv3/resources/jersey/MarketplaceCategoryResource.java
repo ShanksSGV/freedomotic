@@ -28,10 +28,14 @@ import com.wordnik.swagger.annotations.ApiOperation;
 import com.wordnik.swagger.annotations.ApiParam;
 import java.util.ArrayList;
 import java.util.List;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
@@ -53,6 +57,7 @@ public class MarketplaceCategoryResource extends AbstractReadOnlyResource<IPlugi
     }
     
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Show the list of registered remote marketplace providers")
     @Override
     public Response list(){
@@ -64,14 +69,19 @@ public class MarketplaceCategoryResource extends AbstractReadOnlyResource<IPlugi
         return catList;
     }
 
-    @GET
+
     @Path("/{cat}/plugins")
     @ApiOperation(value = "Show the list of plugins belonging to selected category")
     public MarketplacePluginsResource listPluginsFromCategory(
             @ApiParam(value = "Name of plugins category to fetch", required = true)
-            @PathParam("cat") String cat) {
+            @PathParam("cat") String cat,
+            @ApiParam(value = "Retrieve package list automatically, if necessary", required = false)
+            @QueryParam("noUpdate") boolean noUpdate) {
         for (IPluginCategory category : catList) {
-            if (category.getName().equalsIgnoreCase(cat)) {
+            if (category.getName().equalsIgnoreCase(cat) ) {
+                if (mps.getPackageList(category).isEmpty() && !noUpdate){
+                    category.retrievePluginsInfo();
+                }
                 return new MarketplacePluginsResource(mps.getPackageList(category));
             }
         }
@@ -81,6 +91,7 @@ public class MarketplaceCategoryResource extends AbstractReadOnlyResource<IPlugi
     @GET
     @ApiOperation(value = "Get a category basic data")
     @Override
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/{cat}")
     public Response get(
             @ApiParam(value = "Name of plugins category to fetch", required = true)
@@ -99,6 +110,8 @@ public class MarketplaceCategoryResource extends AbstractReadOnlyResource<IPlugi
     }
     
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)    
     @Path("/{id}/update")
     public Response update(
             @ApiParam(value = "Name of plugins category to fetch", required = true)
