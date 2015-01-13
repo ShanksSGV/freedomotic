@@ -8,6 +8,7 @@
         <property name="short-name"             value="energyathome"/>
         <property name="startup-time" 		value="on load"/>
         <property name="flexIP"			value="http://localhost:8080/"/> 
+        <property name="flexWS"                 value="ws://localhost:8080/ws"/>
         <property name="pollingtime"		value="5000"/>  
     </properties>
 </config>
