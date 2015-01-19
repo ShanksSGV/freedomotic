@@ -47,8 +47,9 @@ import javax.script.ScriptException;
  *
  * @event.sender" becomes sensorPlugin="TemperatureSensorPlugin"
  *
- * <p> This class takes a list of properties in form key=value and propagates
- * this list to all commands in a given reaction. After that this list (called
+ * <p>
+ * This class takes a list of properties in form key=value and propagates this
+ * list to all commands in a given reaction. After that this list (called
  * context) is used to resolve the references to external values in the command.
  * For example Commmand: turn on this x10 device x10-object =
  * @event.object.name x10-address =
@@ -62,11 +63,8 @@ import javax.script.ScriptException;
 public final class Resolver {
 
     // private static final String REFERENCE_DELIMITER = "@";
-    private List<String> prefixes = new ArrayList<String>();
+    private List<String> namespaces = new ArrayList<String>();
     private Payload context;
-    private Reaction reaction;
-    private Command command;
-    private Trigger trigger;
 
     /**
      * Creates an empty resolution context
@@ -79,16 +77,15 @@ public final class Resolver {
      * Creates a resolved clone of the reaction in input. All commands in the
      * reaction are resolved according to the context given in the contructor.
      *
-     * @param r
+     * @param reaction
      * @return a clone of the resolver reaction
      */
-    public Reaction resolve(Reaction r) {
-        this.reaction = r;
+    public Reaction resolve(Reaction reaction) {
 
         if ((context != null) && (reaction != null)) {
-            Reaction clone =
-                    new Reaction(reaction.getTrigger(),
-                    performSubstitutionInCommands(reaction.getCommands()));
+            Reaction clone
+                    = new Reaction(reaction.getTrigger(),
+                            performSubstitutionInCommands(reaction.getCommands()));
 
             return clone;
         }
@@ -100,13 +97,13 @@ public final class Resolver {
      * Creates a resolved clone of the command in input according to the current
      * context given in input to the constructor.
      *
-     * @param c
+     * @param command
      * @return
+     * @throws java.lang.CloneNotSupportedException
      * @throws com.freedomotic.exceptions.VariableResolutionException
      */
-    public Command resolve(Command c)
+    public Command resolve(Command command)
             throws CloneNotSupportedException, VariableResolutionException {
-        this.command = c;
 
         if ((context != null) && (command != null)) {
             Command clone = command.clone();
@@ -127,8 +124,7 @@ public final class Resolver {
      * @return
      * @throws com.freedomotic.exceptions.VariableResolutionException
      */
-    public Trigger resolve(Trigger t) throws VariableResolutionException {
-        this.trigger = t;
+    public Trigger resolve(Trigger trigger) throws VariableResolutionException {
 
         if ((context != null) && (trigger != null)) {
             Trigger clone = trigger.clone();
@@ -159,7 +155,7 @@ public final class Resolver {
                 tmp.add(clonedCmd);
             }
         } catch (Exception e) {
-            LOG.warning(Freedomotic.getStackTraceInfo(e));
+            LOG.log(Level.SEVERE, "Error while substituting variables", e);
         }
 
         return tmp;
@@ -178,8 +174,8 @@ public final class Resolver {
             String key = (String) aProperty.getKey();
             String propertyValue = (String) aProperty.getValue();
 
-            for (final String prefix : prefixes) {
-                String regex = "@" + prefix + "[.A-Za-z0-9_-]*\\b(#)?";
+            for (final String namespace : namespaces) {
+                String regex = "@" + namespace + "[.A-Za-z0-9_-]*\\b(#)?";
                 Pattern pattern = Pattern.compile(regex);
                 Matcher matcher = pattern.matcher(propertyValue);
 
@@ -196,9 +192,9 @@ public final class Resolver {
                     }
 
                     //cutting out the first char '@'
-                    referenceToResolve =
-                            referenceToResolve.substring(1,
-                            referenceToResolve.length());
+                    referenceToResolve
+                            = referenceToResolve.substring(1,
+                                    referenceToResolve.length());
 
                     String replacer = command.getProperty(referenceToResolve);
                     if (((replacer != null) && !replacer.isEmpty())) {
@@ -234,8 +230,8 @@ public final class Resolver {
                     }
 
                     if (js.get(key) == null) {
-                        LOG.log(Level.SEVERE, 
-                                "Script evaluation has returned a null value, maybe the key ''{0}'' is not evaluated properly.", 
+                        LOG.log(Level.SEVERE,
+                                "Script evaluation has returned a null value, maybe the key ''{0}'' is not evaluated properly.",
                                 key);
                     }
 
@@ -243,7 +239,7 @@ public final class Resolver {
                     success = true;
                 } catch (Exception ex) {
                     success = false;
-                    LOG.severe(Freedomotic.getStackTraceInfo(ex));
+                    LOG.log(Level.SEVERE, "Error while evaluating script in command", ex);
                 }
             }
 
@@ -269,7 +265,7 @@ public final class Resolver {
             String key = (String) statement.getAttribute();
             String propertyValue = (String) statement.getValue();
 
-            for (final String PREFIX : prefixes) {
+            for (final String PREFIX : namespaces) {
                 Pattern pattern = Pattern.compile("@" + PREFIX + "[.A-Za-z0-9_-]*\\b(#)?"); //find any @token
                 Matcher matcher = pattern.matcher(propertyValue);
                 StringBuffer result = new StringBuffer();
@@ -283,9 +279,9 @@ public final class Resolver {
                         tokenKey = tokenKey.substring(0, tokenKey.length() - 1); //cutting out the optional last '#'
                     }
 
-                    tokenKey =
-                            tokenKey.substring(1,
-                            tokenKey.length()); //cutting out the first char '@'
+                    tokenKey
+                            = tokenKey.substring(1,
+                                    tokenKey.length()); //cutting out the first char '@'
 
                     String tokenValue = trigger.getPayload().getStatementValue(tokenKey);
 
@@ -327,8 +323,8 @@ public final class Resolver {
                     }
 
                     if (js.get(key) == null) {
-                        LOG.log(Level.SEVERE, 
-                                "Script evaluation in trigger ''{0}'' has returned a null value, maybe the key ''{1}'' is not evaluated properly.", 
+                        LOG.log(Level.SEVERE,
+                                "Script evaluation in trigger ''{0}'' has returned a null value, maybe the key ''{1}'' is not evaluated properly.",
                                 new Object[]{trigger.getName(), key});
                     }
 
@@ -372,8 +368,8 @@ public final class Resolver {
         }
 
         //registering the new prefix
-        if (!prefixes.contains(PREFIX)) {
-            prefixes.add(PREFIX);
+        if (!namespaces.contains(PREFIX)) {
+            namespaces.add(PREFIX);
         }
 
         Set entries = aContext.getProperties().entrySet();
@@ -408,8 +404,8 @@ public final class Resolver {
         }
 
         //registering the new prefix
-        if (!prefixes.contains(PREFIX)) {
-            prefixes.add(PREFIX);
+        if (!namespaces.contains(PREFIX)) {
+            namespaces.add(PREFIX);
         }
 
         Iterator it = aContext.entrySet().iterator();
@@ -443,35 +439,32 @@ public final class Resolver {
         }
 
         //registering the new prefix
-        if (!prefixes.contains(PREFIX)) {
-            prefixes.add(PREFIX);
+        if (!namespaces.contains(PREFIX)) {
+            namespaces.add(PREFIX);
         }
 
-        Iterator it = aContext.iterator();
+        // get an hold on the statements list mutex to avoid others to use it
+        synchronized (aContext.getStatements()) {
+            Iterator it = aContext.iterator();
 
-        while (it.hasNext()) {
-            String key;
-            Statement statement = (Statement) it.next();
-
-            //removing the prefix of the properties if already exists
-            //to avoid dublicate prefixes like @event.event.object.name
-            if (statement.getAttribute().startsWith(PREFIX)) {
-                key = statement.getAttribute().substring(PREFIX.length());
-            } else {
-                key = statement.getAttribute();
+            while (it.hasNext()) {
+                String key;
+                Statement statement = (Statement) it.next();
+                //removing the prefix of the properties if already exists
+                //to avoid dublicate prefixes like @event.event.object.name
+                if (statement.getAttribute().startsWith(PREFIX)) {
+                    key = statement.getAttribute().substring(PREFIX.length());
+                } else {
+                    key = statement.getAttribute();
+                }
+                context.addStatement(PREFIX + key, statement.getValue());
             }
-
-            context.addStatement(PREFIX + key,
-                    statement.getValue());
         }
     }
 
     void clear() {
-        prefixes.clear();
+        namespaces.clear();
         context.clear();
-        reaction = null;
-        command = null;
-        trigger = null;
     }
     private static final Logger LOG = Logger.getLogger(Resolver.class.getName());
 }

@@ -52,8 +52,7 @@ public class NlpCommandStringDistanceImpl implements NlpCommand {
     }
 
     /**
-     * {@inheritDoc}
-     * May return also elements with similarity equals to zero.
+     * {@inheritDoc} May return also elements with similarity equals to zero.
      *
      * @param inputText
      * @return
@@ -63,6 +62,13 @@ public class NlpCommandStringDistanceImpl implements NlpCommand {
         ranking = new ArrayList<>();
         buildRanking(inputText);
         Collections.sort(ranking, new DescendingRankComparator());
+
+//        for (Rank<Command> r : ranking) {
+//            if (r.getSimilarity() > 0) {
+//                System.out.println(r.getElement().getName() + " points " + r.getSimilarity());
+//            }
+//        }
+
         if (ranking.isEmpty()) {
             return Collections.unmodifiableList(ranking);
         } else {
@@ -80,26 +86,28 @@ public class NlpCommandStringDistanceImpl implements NlpCommand {
         if (input == null || input.isEmpty()) {
             return;
         }
+        DamerauLevenshtein algorithm = new DamerauLevenshtein();
         for (Command command : commandsRepository.findAll()) {
             int similarity = 0;
-            for (String inputTag : Arrays.asList(input.split(" "))) {
-                for (String commandTag : command.getTags()) {
-                    DamerauLevenshtein algorithm = new DamerauLevenshtein(inputTag.trim().toLowerCase(), commandTag.trim().toLowerCase());
+            // Compare every word of the input to any word in the command name
+            for (String inputWord : Arrays.asList(input.split(" "))) {
+                // Use the command name not the command tags for this
+                for (String commandWord : Arrays.asList(command.getName().split(" "))) {
+                    algorithm.setWordsToCompare(inputWord.trim().toLowerCase(), commandWord.trim().toLowerCase());
                     int distance = algorithm.getSimilarity();
-                    //the percent of similarity in in this tag related to input tag
-                    double percent = ((double) (distance * 100)) / ((double) inputTag.length());
+                    //convert word distance into a percent value
+                    double distancePercent = ((double) (distance * 100)) / ((double) inputWord.length());
 
-                    if (distance == 0) {
-                        similarity += 3;
+                    if (distancePercent == 0) {
+                        similarity += 30; //3 points for any idenitical word
                     } else {
-                        if (percent <= 30) { //30% of error, not too much, it can be a typo
-                            similarity += 1;
+                        if (distancePercent <= 30) { //30% of error, not too much, it can be a typo, give it some points
+                            similarity += 15;
                         }
                     }
                 }
             }
             ranking.add(new Rank(similarity, command));
-            //System.out.println(command.getName() + " points " + similarity);
         }
     }
 
