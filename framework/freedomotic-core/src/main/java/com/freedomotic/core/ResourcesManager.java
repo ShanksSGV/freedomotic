@@ -1,22 +1,20 @@
 /**
  *
- * Copyright (c) 2009-2014 Freedomotic team
- * http://freedomotic.com
+ * Copyright (c) 2009-2014 Freedomotic team http://freedomotic.com
  *
  * This file is part of Freedomotic
  *
- * This Program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2, or (at your option)
- * any later version.
+ * This Program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2, or (at your option) any later version.
  *
- * This Program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
+ * This Program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Freedomotic; see the file COPYING.  If not, see
+ * You should have received a copy of the GNU General Public License along with
+ * Freedomotic; see the file COPYING. If not, see
  * <http://www.gnu.org/licenses/>.
  */
 /* * This Program is free software; you can redistribute it and/or modify
@@ -27,16 +25,19 @@
 package com.freedomotic.core;
 
 import com.freedomotic.util.Info;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
-
 
 /**
  *
@@ -44,7 +45,22 @@ import javax.imageio.ImageIO;
  */
 public final class ResourcesManager {
 
-    private static final HashMap<String, BufferedImage> CACHE = new HashMap<String, BufferedImage>();
+    // private static final Map<String, BufferedImage> CACHE = new HashMap<String, BufferedImage>();
+    private static final LoadingCache<String, BufferedImage> imagesCache = CacheBuilder.newBuilder()
+            .expireAfterAccess(1, TimeUnit.MINUTES)
+            .weakValues()
+            .build(new CacheLoader<String, BufferedImage>() {
+                @Override
+                public BufferedImage load(String imageName) throws Exception {
+                    //loads image from disk searching it recursively in a given folder
+                    BufferedImage img = fetchFromHDD(Info.PATHS.PATH_RESOURCES_FOLDER, imageName);
+                    if (img!=null) {
+                        return img;
+                    } else {
+                        throw new IOException("Cannot recursively find image " + imageName + " in " + Info.PATHS.PATH_RESOURCES_FOLDER);
+                    }
+                }
+            });
 
     /**
      *
@@ -54,29 +70,35 @@ public final class ResourcesManager {
      * @return
      */
     public static BufferedImage getResource(String imageName, int width, int height) {
-        String resizedImageName = imageName + "_" + width + "x" + height;
-        if (!(width > 0) || !(height > 0)) { //not needs resizeing
-            return getResource(imageName);
-        }
-        BufferedImage img = CACHE.get(resizedImageName.toLowerCase());
-        if (img == null) { //img not in cache
-            try {
-                //loads image from disk searching it recursively in folder
-                img = fetchFromHDD(Info.PATHS.PATH_RESOURCES_FOLDER, imageName);
-            } catch (IOException e) {
-                LOG.log(Level.WARNING, "No image {0} found recursively in {1}", 
-                        new Object[]{imageName,Info.PATHS.PATH_RESOURCES_FOLDER.getPath()});
+        try {
+            // Resizeing not needed, return standard image
+            if (!(width > 0) || !(height > 0)) {
+                return imagesCache.get(imageName);
             }
+            // Compute the resized image key
+            String resizedImageName = imageName + "_" + width + "x" + height;
+            BufferedImage img = imagesCache.getIfPresent(resizedImageName.toLowerCase());
+            // Resized image is in cache
             if (img != null) {
-                //img loaded from disk. Now it is cached resized
-                img = resizeImage(img, width, height);
-                CACHE.put(resizedImageName.toLowerCase(), img);
+                return img;
+            } else {
+                //get the unresized image from cache or disk
+                try {
+                    img = imagesCache.get(imageName);
+                } catch (Exception e) {
+                    return null;
+                }
+                // Resize and cache
+                if (img.getWidth() != width && img.getHeight() != height) {
+                    img = resizeImage(img, width, height);
+                }
+                imagesCache.put(resizedImageName.toLowerCase(), img);
                 return img;
             }
-        } else {
-            return img; //return the already cached image
+        } catch (ExecutionException ex) {
+            Logger.getLogger(ResourcesManager.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
-        return null; //an error
     }
 
     /**
@@ -85,24 +107,12 @@ public final class ResourcesManager {
      * @return
      */
     public static synchronized BufferedImage getResource(String imageName) {
-        BufferedImage img = CACHE.get(imageName.toLowerCase());
-        if (img == null) { //img not in cache
-            try {
-                //loads image from disk searching it recursively in folder
-                img = fetchFromHDD(Info.PATHS.PATH_RESOURCES_FOLDER, imageName);
-            } catch (IOException e) {
-                LOG.log(Level.WARNING, "No image {0} found recursively in {1}", 
-                        new Object[]{imageName, Info.PATHS.PATH_RESOURCES_FOLDER.getPath()});
-            }
-            if (img != null) {
-                //img succesfully loaded from disk. Now it is cached
-                CACHE.put(imageName.toLowerCase(), img);
-                return img;
-            }
-        } else {
-            return img; //return the already cached image
+        try {
+            return imagesCache.get(imageName);
+        } catch (ExecutionException ex) {
+            Logger.getLogger(ResourcesManager.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
-        return null; //not cached and not loaded from hdd
     }
 
     /**
@@ -123,7 +133,14 @@ public final class ResourcesManager {
      * @param image
      */
     public static synchronized void addResource(String imageName, BufferedImage image) {
-        CACHE.put(imageName, image);
+        imagesCache.put(imageName, image);
+    }
+
+    /**
+     * Removes any cached element
+     */
+    public static void clear() {
+        imagesCache.cleanUp();
     }
 
     private static BufferedImage resizeImage(BufferedImage image, int width, int height) {
@@ -148,13 +165,6 @@ public final class ResourcesManager {
             throw new IOException();
         }
         return img;
-    }
-
-    /**
-     *
-     */
-    public static void clear() {
-        CACHE.clear();
     }
 
     private static class DirectoryReader {

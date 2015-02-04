@@ -51,10 +51,9 @@ class BusConnection extends LifeCycle {
         // connect to the embedded broker defined above
         ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(Info.MESSAGING.BROKER_DEFAULT);
 
-		// tuned for performances
+        // tuned for performances
         // http://activemq.apache.org/performance-tuning.html
         factory.setUseAsyncSend(true);
-        factory.setOptimizeAcknowledge(true);
         factory.setAlwaysSessionAsync(true);
         factory.setObjectMessageSerializationDefered(true);
         factory.setCopyMessageOnSend(false);

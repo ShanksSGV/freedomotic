@@ -30,7 +30,6 @@ import com.freedomotic.model.object.EnvObject;
 import com.freedomotic.model.object.Representation;
 import com.freedomotic.things.EnvObjectLogic;
 import com.freedomotic.util.TopologyUtils;
-import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -47,6 +46,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
@@ -60,6 +61,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -104,8 +106,9 @@ public class Renderer extends Drawer implements MouseListener, MouseMotionListen
     private Point messageCorner = new Point(50, 50);
     private Dimension dragDiff = null;
     private EnvironmentLogic currEnv;
+    private BufferedImage background;
 
-    private HashMap<EnvObjectLogic, ObjectEditor> objEditorPanels = new HashMap<EnvObjectLogic, ObjectEditor>();
+    private Map<EnvObjectLogic, ObjectEditor> objEditorPanels = new HashMap<EnvObjectLogic, ObjectEditor>();
 
     /**
      *
@@ -155,9 +158,23 @@ public class Renderer extends Drawer implements MouseListener, MouseMotionListen
             objEditorPanels.put(obj, new ObjectEditor(obj));
         }
 
-        ObjectEditor currEditorPanel = objEditorPanels.get(obj);
+        final ObjectEditor currEditorPanel = objEditorPanels.get(obj);
         currEditorPanel.setVisible(true);
         currEditorPanel.toFront();
+        currEditorPanel.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                try {
+                    objEditorPanels.remove(currEditorPanel);
+                } catch (Exception ex) {
+                    LOG.log(Level.SEVERE, "Cannot unload object editor frame", ex);
+                }
+            }
+        });
+    }
+
+    public Map<EnvObjectLogic, ObjectEditor> getOpenThingEditors() {
+        return objEditorPanels;
     }
 
     /**
@@ -266,6 +283,16 @@ public class Renderer extends Drawer implements MouseListener, MouseMotionListen
     public synchronized void setNeedRepaint(boolean repaintBackground) {
         backgroundChanged = repaintBackground;
         this.repaint();
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                for (ObjectEditor editor : getOpenThingEditors().values()) {
+                    //The object may have changed, refresh this panel
+                    editor.populateControlPanel();
+                }
+            }
+        });
+
     }
 
     private void renderIndicators() {
@@ -401,16 +428,16 @@ public class Renderer extends Drawer implements MouseListener, MouseMotionListen
 
                     @Override
                     public void run() {
-                        BufferedImage background = createDrawableCanvas();
-                        paintEnvironmentLayer(setRenderingQuality(background.createGraphics()));
-                        ResourcesManager.addResource("background", background);
+                        BufferedImage bkg = createDrawableCanvas();
+                        paintEnvironmentLayer(setRenderingQuality(bkg.createGraphics()));
+                        background = bkg;
                     }
                 }.run();
             }
         }
 
         setContext(g2);
-        getContext().drawImage(ResourcesManager.getResource("background"),
+        getContext().drawImage(background,
                 0,
                 0,
                 this);
