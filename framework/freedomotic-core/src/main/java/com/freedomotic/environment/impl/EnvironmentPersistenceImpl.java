@@ -19,22 +19,26 @@
  */
 package com.freedomotic.environment.impl;
 
+import com.freedomotic.exceptions.DataUpgradeException;
 import com.freedomotic.exceptions.RepositoryException;
 import com.freedomotic.model.environment.Environment;
 import com.freedomotic.model.environment.Zone;
+import com.freedomotic.persistence.DataUpgradeService;
 import com.freedomotic.persistence.FreedomXStream;
 import com.freedomotic.persistence.XmlPreprocessor;
-import com.freedomotic.util.Info;
+import com.freedomotic.settings.Info;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.XStreamException;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,12 +51,51 @@ class EnvironmentPersistenceImpl implements EnvironmentPersistence {
 
     private static final Logger LOG = Logger.getLogger(EnvironmentPersistenceImpl.class.getName());
 
-    private File directory;
+    private final File directory;
     private boolean savedAsNewEnvironment;
+    private final DataUpgradeService dataUpgradeService;
 
     @Inject
-    EnvironmentPersistenceImpl(@Assisted File directory) {
+    EnvironmentPersistenceImpl(@Assisted File directory, DataUpgradeService dataUpgradeService) {
         this.directory = directory;
+        this.dataUpgradeService = dataUpgradeService;
+    }
+
+    /**
+     *
+     * @param file
+     * @return
+     * @throws RepositoryException
+     */
+    public Environment deserialize(final File file) throws RepositoryException {
+        XStream xstream = FreedomXStream.getXstream();
+        //validate the object against a predefined DTD
+        String xml;
+        try {
+            xml = XmlPreprocessor.validate(file, Info.PATHS.PATH_CONFIG_FOLDER + "/validator/environment.dtd");
+        } catch (IOException ex) {
+            throw new RepositoryException(ex.getMessage(), ex);
+        }
+        try {
+            Properties dataProperties = new Properties();
+            String fromVersion;
+            try {
+                dataProperties.load(new FileInputStream(new File(Info.PATHS.PATH_DATA_FOLDER + "/data.properties")));
+                fromVersion = dataProperties.getProperty("data.version");
+            } catch (IOException iOException) {
+                // Fallback to a default version for older version without that properties file
+                fromVersion = "5.5.0";
+            }
+            xml = (String) dataUpgradeService.upgrade(Environment.class, xml, fromVersion);
+            Environment pojo = (Environment) xstream.fromXML(xml);
+
+            return pojo;
+
+        } catch (DataUpgradeException dataUpgradeException) {
+            throw new RepositoryException("Cannot upgrade Environment file " + file.getAbsolutePath(), dataUpgradeException);
+        } catch (XStreamException e) {
+            throw new RepositoryException("XML parsing error. Readed XML is \n" + xml, e);
+        }
     }
 
     /**
@@ -79,7 +122,8 @@ class EnvironmentPersistenceImpl implements EnvironmentPersistence {
      * @throws RepositoryException
      */
     @Override
-    public void persist(Environment environment) throws RepositoryException {
+    public void persist(Environment environment)
+            throws RepositoryException {
         if (!directory.isDirectory()) {
             throw new RepositoryException(directory.getAbsoluteFile() + " is not a valid environment folder. Skipped");
         }
@@ -147,8 +191,7 @@ class EnvironmentPersistenceImpl implements EnvironmentPersistence {
      * @throws RepositoryException
      */
     @Override
-    public Collection<Environment> loadAll()
-            throws RepositoryException {
+    public Collection<Environment> loadAll() throws RepositoryException {
         if (directory == null) {
             throw new RepositoryException("Cannot load environments from null directory");
         }
@@ -182,31 +225,6 @@ class EnvironmentPersistenceImpl implements EnvironmentPersistence {
         LOG.log(Level.CONFIG, "Serializing environment to {0}", file);
         FreedomXStream.toXML(env, file);
         LOG.log(Level.INFO, "Application environment {0} succesfully serialized", env.getName());
-    }
-
-    /**
-     *
-     * @param file
-     * @return
-     * @throws RepositoryException
-     */
-    public static Environment deserialize(final File file) throws RepositoryException {
-        XStream xstream = FreedomXStream.getXstream();
-        //validate the object against a predefined DTD
-        String xml;
-        try {
-            xml = XmlPreprocessor.validate(file, Info.PATHS.PATH_CONFIG_FOLDER + "/validator/environment.dtd");
-        } catch (IOException ex) {
-            throw new RepositoryException(ex.getMessage(), ex);
-        }
-        Environment pojo = null;
-        try {
-            pojo = (Environment) xstream.fromXML(xml);
-
-            return pojo;
-        } catch (XStreamException e) {
-            throw new RepositoryException("XML parsing error. Readed XML is \n" + xml, e);
-        }
     }
 
 }

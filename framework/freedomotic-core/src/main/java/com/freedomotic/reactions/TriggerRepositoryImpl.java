@@ -19,11 +19,9 @@
  */
 package com.freedomotic.reactions;
 
-import com.freedomotic.app.Freedomotic;
-import com.freedomotic.persistence.Repository;
 import com.freedomotic.persistence.FreedomXStream;
 import com.freedomotic.persistence.XmlPreprocessor;
-import com.freedomotic.util.Info;
+import com.freedomotic.settings.Info;
 import com.thoughtworks.xstream.XStream;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -40,7 +38,7 @@ import java.util.logging.Logger;
  *
  * @author Enrico
  */
-public class TriggerPersistence implements Repository<Trigger> {
+class TriggerRepositoryImpl implements TriggerRepository {
 
     private static ArrayList<Trigger> list = new ArrayList<Trigger>();
 
@@ -48,7 +46,8 @@ public class TriggerPersistence implements Repository<Trigger> {
      *
      * @param folder
      */
-    public static void saveTriggers(File folder) {
+    @Override
+    public void saveTriggers(File folder) {
         if (list.isEmpty()) {
             LOG.warning("There are no triggers to persist, " + folder.getAbsolutePath()
                     + " will not be altered.");
@@ -80,8 +79,7 @@ public class TriggerPersistence implements Repository<Trigger> {
                 }
             }
         } catch (Exception e) {
-            LOG.info(e.getLocalizedMessage());
-            LOG.severe(Freedomotic.getStackTraceInfo(e));
+            LOG.log(Level.SEVERE, "Error while saving triggers", e);
         }
     }
 
@@ -117,18 +115,16 @@ public class TriggerPersistence implements Repository<Trigger> {
      *
      * @param folder
      */
-    public synchronized static void loadTriggers(File folder) {
+    @Override
+    public void loadTriggers(File folder) {
         XStream xstream = FreedomXStream.getXstream();
 
         // This filter only returns object files
         FileFilter objectFileFileter
                 = new FileFilter() {
+                    @Override
                     public boolean accept(File file) {
-                        if (file.isFile() && file.getName().endsWith(".xtrg")) {
-                            return true;
-                        } else {
-                            return false;
-                        }
+                        return file.isFile() && file.getName().endsWith(".xtrg");
                     }
                 };
 
@@ -184,7 +180,7 @@ public class TriggerPersistence implements Repository<Trigger> {
                 LOG.config("No triggers to load from this folder " + folder.toString());
             }
         } catch (Exception e) {
-            LOG.severe("Exception while loading this trigger.\n" + Freedomotic.getStackTraceInfo(e));
+            LOG.log(Level.SEVERE, "Exception while loading this trigger", e);
         }
     }
 
@@ -193,12 +189,12 @@ public class TriggerPersistence implements Repository<Trigger> {
      * @param t
      */
     public static synchronized void addAndRegister(Trigger t) {
-        int preSize = TriggerPersistence.size();
+        int preSize = TriggerRepositoryImpl.size();
 
         if (!list.contains(t)) {
             list.add(t);
             t.register();
-            int postSize = TriggerPersistence.size();
+            int postSize = TriggerRepositoryImpl.size();
             if (!(postSize == (preSize + 1))) {
                 LOG.severe("Error while while adding and registering trigger '" + t.getName() + "'");
             }
@@ -218,7 +214,7 @@ public class TriggerPersistence implements Repository<Trigger> {
      */
     public static synchronized void add(Trigger t) {
         if (t != null) {
-            int preSize = TriggerPersistence.size();
+            int preSize = TriggerRepositoryImpl.size();
 
             if (!list.contains(t)) {
                 list.add(t);
@@ -229,7 +225,7 @@ public class TriggerPersistence implements Repository<Trigger> {
                 list.set(old, t);
             }
 
-            int postSize = TriggerPersistence.size();
+            int postSize = TriggerRepositoryImpl.size();
 
             if (!(postSize == (preSize + 1))) {
                 LOG.severe("Error while while adding trigger '" + t.getName() + "'");
@@ -242,12 +238,12 @@ public class TriggerPersistence implements Repository<Trigger> {
      * @param t
      */
     public static synchronized void remove(Trigger t) {
-        int preSize = TriggerPersistence.size();
+        int preSize = TriggerRepositoryImpl.size();
 
         try {
             t.unregister();
             list.remove(t);
-            int postSize = TriggerPersistence.size();
+            int postSize = TriggerRepositoryImpl.size();
 
             if (!(postSize == (preSize - 1))) {
                 LOG.severe("Error while while removing trigger '" + t.getName() + "'");
@@ -343,7 +339,7 @@ public class TriggerPersistence implements Repository<Trigger> {
         return list.size();
     }
 
-    private static final Logger LOG = Logger.getLogger(TriggerPersistence.class.getName());
+    private static final Logger LOG = Logger.getLogger(TriggerRepositoryImpl.class.getName());
 
     @Override
     public List<Trigger> findAll() {

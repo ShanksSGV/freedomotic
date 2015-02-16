@@ -23,7 +23,7 @@ import com.freedomotic.app.Freedomotic;
 import com.freedomotic.persistence.Repository;
 import com.freedomotic.persistence.FreedomXStream;
 import com.freedomotic.persistence.XmlPreprocessor;
-import com.freedomotic.util.Info;
+import com.freedomotic.settings.Info;
 import com.thoughtworks.xstream.XStream;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -89,17 +89,14 @@ public class ReactionPersistence implements Repository<Reaction> {
     }
 
     private static void deleteReactionFiles(File folder) {
-        File[] files = folder.listFiles();
+        File[] files;
 
         // This filter only returns object files
         FileFilter objectFileFileter
                 = new FileFilter() {
+                    @Override
                     public boolean accept(File file) {
-                        if (file.isFile() && file.getName().endsWith(".xrea")) {
-                            return true;
-                        } else {
-                            return false;
-                        }
+                        return file.isFile() && file.getName().endsWith(".xrea");
                     }
                 };
 
@@ -198,6 +195,11 @@ public class ReactionPersistence implements Repository<Reaction> {
                 LOG.debug("Added new reaction {}", r.getDescription());
             }
         } else {
+            // Exists but has no commands
+            if (r.getCommands().isEmpty()) {
+                LOG.info("The reaction ''{}'' has no associated commands and will be unloaded.", r.getDescription());
+                remove(r);
+            }
             LOG.info("The reaction ''{}'' is already loaded so it is skipped.", r.getDescription());
         }
     }

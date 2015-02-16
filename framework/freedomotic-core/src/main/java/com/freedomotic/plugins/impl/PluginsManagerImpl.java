@@ -6,15 +6,15 @@ package com.freedomotic.plugins.impl;
 
 import com.freedomotic.api.Client;
 import com.freedomotic.api.Plugin;
-import com.freedomotic.app.Freedomotic;
 import com.freedomotic.exceptions.RepositoryException;
 import com.freedomotic.exceptions.PluginLoadingException;
+import com.freedomotic.i18n.I18n;
 import com.freedomotic.plugins.ClientStorage;
 import com.freedomotic.plugins.PluginsManager;
 import com.freedomotic.reactions.CommandPersistence;
 import com.freedomotic.reactions.ReactionPersistence;
-import com.freedomotic.reactions.TriggerPersistence;
-import com.freedomotic.util.Info;
+import com.freedomotic.reactions.TriggerRepository;
+import com.freedomotic.settings.Info;
 import com.freedomotic.util.Unzip;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -46,15 +46,17 @@ class PluginsManagerImpl implements PluginsManager {
 
     // Depedencies
     private ClientStorage clientStorage;
-    private TriggerPersistence triggers;
+    private TriggerRepository triggers;
+    private I18n i18n;
 
     @Inject
     Injector injector;
 
     @Inject
-    PluginsManagerImpl(ClientStorage clientStorage, TriggerPersistence triggers) {
+    PluginsManagerImpl(ClientStorage clientStorage, TriggerRepository triggers, I18n i18n) {
         this.clientStorage = clientStorage;
         this.triggers = triggers;
+        this.i18n = i18n;
     }
 
     /**
@@ -124,7 +126,9 @@ class PluginsManagerImpl implements PluginsManager {
                 Plugin p = (Plugin) client;
                 p.loadPermissionsFromManifest();
                 if (p.getConfiguration().getBooleanProperty("enable-i18n", false)) {
-                    p.getApi().getI18n().registerPluginBundleDir(p);
+                    i18n.registerBundleTranslations(
+                            p.getClass().getPackage().getName(),
+                            new File(p.getFile().getParentFile() + "/data/i18n"));
                 }
             }
             clientStorage.add(client);
