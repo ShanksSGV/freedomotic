@@ -22,7 +22,6 @@
 package com.freedomotic.plugins.devices.jscube.energyathome;
 
 import com.freedomotic.plugins.devices.jscube.energyathome.enums.Behaviors;
-import com.freedomotic.plugins.devices.jscube.energyathome.enums.DalFunctionUID;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -31,6 +30,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,17 +51,32 @@ public class EnergyAtHomeController {
     private static final int MAX_CONNECTON_FAILURES = 5;
     private static final Logger LOG = Logger.getLogger(EnergyAtHome.class.getName());
 
+    public static ArrayList<String> Top_DALfunctionUID = new ArrayList<>(Arrays.asList(
+            "WindowCovering",
+            "ColorControl",
+            "MultiLevelControl",
+            "WashingMachine",
+            "Fridge",
+            "Oven",
+            "PowerProfile"));
+
+    public static ArrayList<String> Mid_DALfunctionUID = new ArrayList<>(Arrays.asList(
+            "OnOff"));
+    public static ArrayList<String> Low_DALfunctionUID = new ArrayList<>(Arrays.asList(
+            "EnergyMeter"));
+
     public EnergyAtHomeController(String flexIP, EnergyAtHome eah) {
         //Important: reset connection failure counter
         connectionFailuresCount = 0;
         this.flexIP = flexIP;
         this.eah = eah;
     }
-    
-        /**
+
+    /**
      * getDevices() gathers devices linked to flexGW and create\synchronize them
      * on Freedomotic;
-     * @return 
+     *
+     * @return
      * @throws java.io.IOException
      */
     protected boolean getDevices() throws IOException {
@@ -70,15 +86,16 @@ public class EnergyAtHomeController {
             for (int i = 0; i < json.length(); i++) {
                 String address = json.getJSONObject(i).getString(
                         "dal.device.UID");
-                String name = json.getJSONObject(i).getString("component.name");
+
+                String name = json.getJSONObject(i).getString(
+                        "dal.device.UID").split(":")[1];
+
                 String type = getType(address);
                 LOG.log(Level.INFO, "...Synchronizing object {0} {1}", new Object[]{type, address});
-                if (type.equalsIgnoreCase(DalFunctionUID.OnOff.toString())) {
+                
+                if ((type.equalsIgnoreCase("OnOff")) || (type.equalsIgnoreCase("ColorControl"))) {
                     String status = String.valueOf(getStatus(address));
-                    eah.buildEvent(name, address, Behaviors.powered, status, "SmartPlug");
-                } else if (type.equalsIgnoreCase(DalFunctionUID.ColorControl.toString())) {
-                    String status = String.valueOf(getStatus(address));
-                    eah.buildEvent(name, address, Behaviors.powered, status, "Color Light");
+                    eah.buildEvent(name, address, Behaviors.powered, status, type);
                 }
             }
             return true;
@@ -89,33 +106,56 @@ public class EnergyAtHomeController {
         }
     }
 
-     /**
+    /**
      * getType(String address) gives the class of a device, in order to create
      * it on Freedomotic
+     *
      * @param address
-     * @return 
-     * @throws java.io.IOException 
+     * @return
+     * @throws java.io.IOException
      */
     protected String getType(String address) throws IOException {
         String line = getToFlex(flexIP + "api/devices/" + address
                 + "/functions");
+        String type;
         try {
             JSONArray json = new JSONArray(line);
-            String[] temp = json.getJSONObject(0).getString("dal.function.UID")
-                    .split(":");
-            //it takes the FIRST dal.function.UID. NB TBD a better method...
-            String type = temp[temp.length - 1];
-            return type;
+
+            for (int i = 0; i < json.length(); i++) {
+                String[] temp = json.getJSONObject(i).getString("dal.function.UID")
+                        .split(":");
+                type = temp[temp.length - 1];
+                if (Top_DALfunctionUID.contains(type)) {
+                    return type;
+                }
+            }
+            for (int i = 0; i < json.length(); i++) {
+                String[] temp = json.getJSONObject(i).getString("dal.function.UID")
+                        .split(":");
+                type = temp[temp.length - 1];
+                if (Mid_DALfunctionUID.contains(type)) {
+                    return type;
+                }
+            }
+            for (int i = 0; i < json.length(); i++) {
+                String[] temp = json.getJSONObject(i).getString("dal.function.UID")
+                        .split(":");
+                type = temp[temp.length - 1];
+                if (Low_DALfunctionUID.contains(type)) {
+                    return type;
+                }
+            }
         } catch (JSONException e) {
             e.printStackTrace();
         }
         return null;
     }
-    
-     /**
+
+    /**
      * getStatus(String address) gives device status with OnOff function.UID
+     *
      * @param address
-     * @return 
+     * @return
      * @throws java.io.IOException
      */
     protected boolean getStatus(String address) throws IOException {
@@ -131,12 +171,13 @@ public class EnergyAtHomeController {
         }
         return status;
     }
-    
+
     /**
      * GET to the flexGW
+     *
      * @param urlToInvoke
-     * @return 
-     * @throws java.io.IOException 
+     * @return
+     * @throws java.io.IOException
      */
     protected String getToFlex(String urlToInvoke) throws IOException {
         String line = null;
@@ -158,10 +199,11 @@ public class EnergyAtHomeController {
 
     /**
      * POST to the flexGW
+     *
      * @param urlToInvoke
      * @param body
-     * @return 
-     * @throws java.io.IOException 
+     * @return
+     * @throws java.io.IOException
      */
     protected String postToFlex(String urlToInvoke, String body) throws IOException {
         try {

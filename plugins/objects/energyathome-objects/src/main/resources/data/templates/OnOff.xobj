@@ -1,5 +1,5 @@
 <object>
-  <name>SmartPlug</name>
+  <name>OnOff</name>
   <description>An Energy@Home Smart Plug</description>
   <actAs>unimplemented</actAs>
   <type>EnvObject.ElectricDevice.SmartPlug</type>

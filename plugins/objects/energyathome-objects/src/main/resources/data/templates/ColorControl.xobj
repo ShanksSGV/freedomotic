@@ -1,5 +1,5 @@
 <object>
-  <name>Color Light</name>
+  <name>ColorControl</name>
   <description>An Energy@Home Color Light</description>
   <actAs>unimplemented</actAs>
   <type>EnvObject.ElectricDevice.Light.RGBLight</type>
