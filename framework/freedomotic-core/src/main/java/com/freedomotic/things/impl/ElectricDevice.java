@@ -79,14 +79,54 @@ public class ElectricDevice extends EnvObjectLogic {
         registerBehavior(powered);
 
         //ADD CONSUMPTION BEHAVIOR
-        RangedIntBehavior cons_pojo = (RangedIntBehavior) getPojo().getBehavior(BEHAVIOR_POWER_CONSUMPTION);
-        if (cons_pojo != null) {
-            consumption = new RangedIntBehaviorLogic(cons_pojo);
+        final RangedIntBehavior consumptionPojo = (RangedIntBehavior) getPojo().getBehavior(BEHAVIOR_POWER_CONSUMPTION);
+        if (consumptionPojo != null) {
+            consumption = new RangedIntBehaviorLogic(consumptionPojo);
+            consumption.addListener(new RangedIntBehaviorLogic.Listener() {
+
+                @Override
+                public void onLowerBoundValue(Config params, boolean fireCommand) {
+                    setConsumptionValue(consumptionPojo.getMin(), params, fireCommand);
+                }
+
+                @Override
+                public void onUpperBoundValue(Config params, boolean fireCommand) {
+                    setConsumptionValue(consumptionPojo.getMax(), params, fireCommand);
+                }
+
+                @Override
+                public void onRangeValue(int rangeValue, Config params, boolean fireCommand) {
+                    setConsumptionValue(rangeValue, params, fireCommand);
+                }
+            });
+            //register this behavior to the superclass to make it visible to it
             registerBehavior(consumption);
         }
 
         //caches hardware level commands and builds user command for the Electric Devices
         super.init();
+    }
+
+    /**
+     * Update the power consumption value. This behavior is supposed to be read
+     * only by design, so no commands are executed even if the fireCommand
+     * property is set to true.
+     *
+     * @param value the new consumption value
+     * @param params general request parameters
+     * @param fireCommand true if a command should executed by the related
+     * plugin, false if this is just a thing status update
+     */
+    public void setConsumptionValue(int value, Config params, boolean fireCommand) {
+        if (fireCommand) {
+            // Action on the hardware is required
+            LOG.log(Level.WARNING, "Power consumption behavior of thing ''{0}''"
+                    + " is supposed to be a read only value. "
+                    + "No command is executed!", this.getPojo().getName());
+        }
+        // Just a change in the virtual thing status
+        consumption.setValue(value);
+        setChanged(true);
     }
 
     /**
