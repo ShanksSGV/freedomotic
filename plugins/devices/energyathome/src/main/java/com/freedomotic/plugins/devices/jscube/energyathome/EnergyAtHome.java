@@ -58,6 +58,7 @@ public class EnergyAtHome extends Protocol {
     private static final Logger LOG = Logger.getLogger(EnergyAtHome.class.getName());
 
     EnergyAtHomeController eahc;
+    EnergyAtHomeWebSocket wseah;
 
     public EnergyAtHome() {
         super("Energy@Home",
@@ -79,7 +80,7 @@ public class EnergyAtHome extends Protocol {
         }
         try {
             URI uriWS = new URI(flexWS);
-            EnergyAtHomeWebSocket wseah = new EnergyAtHomeWebSocket(uriWS, new Draft_17(), this);
+            wseah = new EnergyAtHomeWebSocket(uriWS, new Draft_17(), this);
             wseah.connect();
         } catch (URISyntaxException ex) {
             throw new PluginStartupException("Cannot connect to WebSocket at " + flexWS, ex);
@@ -140,6 +141,14 @@ public class EnergyAtHome extends Protocol {
 
     @Override
     protected void onRun() {
+        wseah.close();
+        try {
+            URI uriWS = new URI(flexWS);
+            wseah = new EnergyAtHomeWebSocket(uriWS, new Draft_17(), this);
+            wseah.connect();
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(EnergyAtHome.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**

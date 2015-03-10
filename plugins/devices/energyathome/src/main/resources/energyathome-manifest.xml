@@ -9,6 +9,6 @@
         <property name="startup-time" 		value="on load"/>
         <property name="flexIP"			value="http://192.168.1.197/"/> 
         <property name="flexWS"                 value="ws://192.168.1.197/ws"/>
-        <property name="pollingtime"		value="5000"/>  
+        <property name="pollingtime"		value="600000"/>  
     </properties>
 </config>
