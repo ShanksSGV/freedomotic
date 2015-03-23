@@ -3,7 +3,7 @@
   <description>An Energy@Home Smart Plug</description>
   <actAs>unimplemented</actAs>
   <type>EnvObject.ElectricDevice.SmartPlug</type>
-  <hierarchy>com.freedomotic.things.impl.ElectricDevice</hierarchy>
+  <hierarchy>com.freedomotic.things.impl.SmartPlug</hierarchy>
   <protocol>energyathome</protocol>
   <phisicalAddress>unknown</phisicalAddress>
   <behaviors>

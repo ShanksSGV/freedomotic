@@ -10,7 +10,7 @@
     <artifactId>energyathome-things</artifactId>
     <packaging>jar</packaging>
     <name>energyathome-things</name>
-    <version>3.0</version>
+    <version>3.1</version>
     <developers>
         <developer>
             <id>danny</id>
@@ -55,6 +55,12 @@
             <artifactId>freedomotic-core</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.freedomotic</groupId>
+            <artifactId>frontend-java</artifactId>
+            <version>3.0</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 
