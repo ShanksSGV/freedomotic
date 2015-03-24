@@ -18,10 +18,10 @@ import java.util.ResourceBundle;
  * @author Danny
  */
 public class SmartPlug extends ElectricDevice {
-    
+
     //partial implementation of i18n... waiting for future improvements
-    
-    Locale it = new Locale("it","IT");
+    //at the moment this is embedded... Can we take it from the manifest? or from the JFrontend plugin?
+    Locale it = new Locale("it", "IT");
     ResourceBundle messages = ResourceBundle.getBundle("data/i18n/energyathomethings", it);
 
     @Override
@@ -32,16 +32,15 @@ public class SmartPlug extends ElectricDevice {
     @Override
     protected void createCommands() {
         super.createCommands();
-        
+
         //i18n commands
-        
         Command turnon = new Command();
         turnon.setName(messages.getString("turnon") + getPojo().getName());
         turnon.setReceiver("app.events.sensors.behavior.request.objects");
         turnon.setProperty("object", getPojo().getName());
         turnon.setProperty("behavior", BEHAVIOR_POWERED);
         turnon.setProperty("value", BooleanBehavior.VALUE_TRUE);
-        
+
         commandRepository.create(turnon);
 
         Command turnoff = new Command();
@@ -50,7 +49,7 @@ public class SmartPlug extends ElectricDevice {
         turnoff.setProperty("object", getPojo().getName());
         turnoff.setProperty("behavior", BEHAVIOR_POWERED);
         turnoff.setProperty("value", BooleanBehavior.VALUE_FALSE);
-        
+
         commandRepository.create(turnoff);
     }
 

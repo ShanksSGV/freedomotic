@@ -22,6 +22,8 @@
 package com.freedomotic.plugins.devices.jscube.energyathome;
 
 import com.freedomotic.plugins.devices.jscube.energyathome.enums.Behaviors;
+import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageEvent;
+import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageListener;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -29,17 +31,23 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.java_websocket.drafts.Draft_17;
+import org.java_websocket.exceptions.WebsocketNotConnectedException;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class EnergyAtHomeController {
+public class EnergyAtHomeController implements MessageListener {
+
+    EnergyAtHomeWebSocket wseah;
 
     protected static URL url;
     protected static HttpURLConnection connection;
@@ -53,12 +61,14 @@ public class EnergyAtHomeController {
 
     public static ArrayList<String> Top_DALfunctionUID = new ArrayList<>(Arrays.asList(
             "WindowCovering",
+            "DoorLock",
             "ColorControl",
             "MultiLevelControl",
             "WashingMachine",
             "Fridge",
             "Oven",
-            "PowerProfile"));
+            "PowerProfile",
+            "MinCoolSetPointLimitSensor"));
 
     public static ArrayList<String> Mid_DALfunctionUID = new ArrayList<>(Arrays.asList(
             "OnOff"));
@@ -92,7 +102,7 @@ public class EnergyAtHomeController {
 
                 String type = getType(address);
                 LOG.log(Level.INFO, "...Synchronizing object {0} {1}", new Object[]{type, address});
-                
+
                 if ((type.equalsIgnoreCase("OnOff")) || (type.equalsIgnoreCase("ColorControl"))) {
                     String status = String.valueOf(getStatus(address));
                     eah.buildEvent(name, address, Behaviors.powered, status, type);
@@ -245,6 +255,65 @@ public class EnergyAtHomeController {
             LOG.log(Level.INFO, "API connection failed {0} times", connectionFailuresCount);
         } else {
             LOG.log(Level.INFO, "Too many API connection failures ({0} failures)", connectionFailuresCount);
+        }
+    }
+
+    protected boolean openWebSocket(String flexWS) {
+        try {
+            URI uriWS = new URI(flexWS);
+            wseah = new EnergyAtHomeWebSocket(uriWS, new Draft_17(), this);
+            wseah.connect();
+        } catch (WebsocketNotConnectedException | URISyntaxException wne) {
+            wne.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    protected void closeWebSocket(String flexWS) {
+        wseah.close();
+        try {
+            URI uriWS = new URI(flexWS);
+            wseah = new EnergyAtHomeWebSocket(uriWS, new Draft_17(), this);
+            wseah.connect();
+        } catch (URISyntaxException ex) {
+            Logger.getLogger(EnergyAtHome.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+
+    /**
+     * Manages the socket messages
+     *
+     * @param me
+     */
+    @Override
+    public void onMessageReceived(MessageEvent me) {
+        String address;
+        String value;
+        String dalFunctionId;
+        try {
+            JSONObject json = new JSONObject(me.getBody());
+            JSONObject properties = json.getJSONObject("properties");
+            String temp = properties.getString("dal.function.UID");
+            int i = temp.lastIndexOf(":");
+            address = temp.substring(0, i);
+            dalFunctionId = temp.substring(i + 1);
+            String property = properties.getString("dal.function.property.name");
+            if (dalFunctionId.equalsIgnoreCase("OnOff")) {
+                value = properties.getJSONObject("dal.function.property.value").getString("value");
+                eah.buildEvent(null, address, Behaviors.powered, value, null);
+            }
+            if (dalFunctionId.equalsIgnoreCase("EnergyMeter")) {
+                if (property.equalsIgnoreCase("current")) {
+                    value = properties.getJSONObject("dal.function.property.value").getString("level");
+                    value = String.valueOf(Double.valueOf(value) * 10);
+                    eah.buildEvent(null, address, Behaviors.power_consumption, value, null);
+                }
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 

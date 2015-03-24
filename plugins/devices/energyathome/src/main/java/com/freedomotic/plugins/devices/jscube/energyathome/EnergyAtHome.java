@@ -26,8 +26,6 @@ import com.freedomotic.plugins.devices.jscube.energyathome.enums.*;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,7 +38,6 @@ import com.freedomotic.things.ThingRepository;
 
 import com.google.inject.Inject;
 
-import org.java_websocket.drafts.Draft_17;
 
 public class EnergyAtHome extends Protocol {
 
@@ -58,7 +55,6 @@ public class EnergyAtHome extends Protocol {
     private static final Logger LOG = Logger.getLogger(EnergyAtHome.class.getName());
 
     EnergyAtHomeController eahc;
-    EnergyAtHomeWebSocket wseah;
 
     public EnergyAtHome() {
         super("Energy@Home",
@@ -78,13 +74,12 @@ public class EnergyAtHome extends Protocol {
             // Stop the plugin and notify connection problems
             throw new PluginStartupException("Cannot connect to API at " + flexIP, ex);
         }
-        try {
-            URI uriWS = new URI(flexWS);
-            wseah = new EnergyAtHomeWebSocket(uriWS, new Draft_17(), this);
-            wseah.connect();
-        } catch (URISyntaxException ex) {
-            throw new PluginStartupException("Cannot connect to WebSocket at " + flexWS, ex);
+
+        if (!eahc.openWebSocket(flexWS)) {
+            throw new PluginStartupException("Cannot register to Scubox WebSocket Endpoint");
         }
+
+        
     }
 
     @Override
@@ -141,14 +136,7 @@ public class EnergyAtHome extends Protocol {
 
     @Override
     protected void onRun() {
-        wseah.close();
-        try {
-            URI uriWS = new URI(flexWS);
-            wseah = new EnergyAtHomeWebSocket(uriWS, new Draft_17(), this);
-            wseah.connect();
-        } catch (URISyntaxException ex) {
-            Logger.getLogger(EnergyAtHome.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        eahc.closeWebSocket(flexWS);
     }
 
     /**

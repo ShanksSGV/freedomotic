@@ -2,8 +2,8 @@
   <name>ColorControl</name>
   <description>An Energy@Home Color Light</description>
   <actAs>unimplemented</actAs>
-  <type>EnvObject.ElectricDevice.Light.RGBLight</type>
-  <hierarchy>com.freedomotic.things.impl.RGBLight</hierarchy>
+  <type>EnvObject.ElectricDevice.Light.ColorLight</type>
+  <hierarchy>com.freedomotic.things.impl.ColorLight</hierarchy>
   <protocol>energyathome</protocol>
   <phisicalAddress>unknown</phisicalAddress>
   <behaviors>

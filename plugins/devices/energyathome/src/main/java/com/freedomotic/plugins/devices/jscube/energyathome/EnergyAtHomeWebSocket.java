@@ -21,22 +21,20 @@
  */
 package com.freedomotic.plugins.devices.jscube.energyathome;
 
-import com.freedomotic.plugins.devices.jscube.energyathome.enums.Behaviors;
+import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageEvent;
+import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageListener;
 import java.net.URI;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft;
 import org.java_websocket.handshake.ServerHandshake;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 public class EnergyAtHomeWebSocket extends WebSocketClient {
 
-    private final EnergyAtHome eah;
+    MessageListener listener;
 
-    public EnergyAtHomeWebSocket(URI serverUri, Draft draft, EnergyAtHome eah) {
+    public EnergyAtHomeWebSocket(URI serverUri, Draft draft, MessageListener listener) {
         super(serverUri, draft);
-        this.eah = eah;
+        this.listener = listener;
     }
 
     @Override
@@ -48,32 +46,8 @@ public class EnergyAtHomeWebSocket extends WebSocketClient {
     @Override
     public void onMessage(String message) {
         System.out.println("\n\nreceived: " + message + "\n\n");
-        String address;
-        String value;
-        String dalFunctionId;
-        try {
-            JSONObject json = new JSONObject(message);
-            JSONObject properties = json.getJSONObject("properties");
-            String temp = properties.getString("dal.function.UID");
-            int i = temp.lastIndexOf(":");
-            address = temp.substring(0, i);
-            dalFunctionId = temp.substring(i+1);
-            String property = properties.getString("dal.function.property.name");
-            if (dalFunctionId.equalsIgnoreCase("OnOff")) {
-                value = properties.getJSONObject("dal.function.property.value").getString("value");
-                eah.buildEvent(null, address, Behaviors.powered, value, null);
-            }
-            if (dalFunctionId.equalsIgnoreCase("EnergyMeter")) {
-                if (property.equalsIgnoreCase("current")) {
-                    value = properties.getJSONObject("dal.function.property.value").getString("level");
-                    value = String.valueOf(Double.valueOf(value)*10);
-                    eah.buildEvent(null, address, Behaviors.power_consumption, value, null);
-                }
-            }
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        MessageEvent me = new MessageEvent(this, message);
+        listener.onMessageReceived(me);
     }
 
     @Override
