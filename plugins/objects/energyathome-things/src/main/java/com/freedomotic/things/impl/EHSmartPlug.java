@@ -17,7 +17,7 @@ import java.util.ResourceBundle;
  *
  * @author Danny
  */
-public class SmartPlug extends ElectricDevice {
+public class EHSmartPlug extends ElectricDevice {
 
     //partial implementation of i18n... waiting for future improvements
     //at the moment this is embedded... Can we take it from the manifest? or from the JFrontend plugin?

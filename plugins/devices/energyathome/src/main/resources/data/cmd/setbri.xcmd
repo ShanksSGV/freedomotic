@@ -1,17 +1,18 @@
 <com.freedomotic.reactions.Command>
   <name>Set Color Light brightness</name>
   <receiver>app.actuators.protocol.energyathome.in</receiver>
-  <description>Changin hue of an E@H Color Light</description>
+  <description>Changing hue of an E@H Color Light</description>
   <hardwareLevel>true</hardwareLevel>
   <delay>0</delay>
   <timeout>0</timeout>
   <properties>
     <properties>
-      <property name="protocol" value="energyathome"/>
-      <property name="name" value="@owner.object.name"/> 
-      <property name="identifier" value="@owner.object.address"/>
-      <property name="value" value="@request.value"/>
-      <property name="code" value="1" />
+        <property name="protocol" value="energyathome"/>
+        <property name="name" value="@owner.object.name"/> 
+        <property name="identifier" value="@owner.object.address"/>
+        <property name="code" value="1" />    
+        <property name="function" value="brightness"/>
+        <property name="value" value="@request.value"/>
     </properties>
   </properties>
 </com.freedomotic.reactions.Command>

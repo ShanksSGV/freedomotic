@@ -33,11 +33,11 @@ import com.freedomotic.api.EventTemplate;
 import com.freedomotic.api.Protocol;
 import com.freedomotic.events.ProtocolRead;
 import com.freedomotic.exceptions.PluginStartupException;
+import com.freedomotic.plugins.devices.jscube.energyathome.utils.Value;
 import com.freedomotic.reactions.Command;
 import com.freedomotic.things.ThingRepository;
 
 import com.google.inject.Inject;
-
 
 public class EnergyAtHome extends Protocol {
 
@@ -79,7 +79,6 @@ public class EnergyAtHome extends Protocol {
             throw new PluginStartupException("Cannot register to Scubox WebSocket Endpoint");
         }
 
-        
     }
 
     @Override
@@ -92,51 +91,84 @@ public class EnergyAtHome extends Protocol {
     protected void onCommand(Command c) {
         String body = null;
         switch (c.getProperty("code")) {
-            case "0": {
-                if (c.getProperty("state").equals("ON")) {
+            case "0": { //OnOff commands
+                if (c.getProperty("value").equals("ON")) {
                     body = "{\"operation\":\"setTrue\"}";
                 } else {
                     body = "{\"operation\":\"setFalse\"}";
                 }
                 try {
                     eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                            + ":OnOff", body);
+                            + ":" + Value.DAL_ONOFF, body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
                 break;
             }
-            case "1": {
-                String hue = null, sat = null;
-                if (c.getName().contains("hue")) {
-                    hue = c.getProperty("value");
-                    sat = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Behaviors.saturation.toString()).getValueAsString();
-                } else if (c.getName().contains("saturation")) {
-                    hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Behaviors.hue.toString()).getValueAsString();
-                    sat = c.getProperty("value");
-                } else if (c.getName().contains("brightness")) {
-                    LOG.log(Level.INFO, "Command not supported!");
+            case "1": { //Hue commands
+                String hue = null, sat = null, dalfunction = null;
+
+                if (c.getProperty("function").equalsIgnoreCase(Value.FD_BRI)) {
+                    String bri = c.getProperty("value");
+                    dalfunction = Value.DAL_LEVELCONTROL;
+                    body = "{\"operation\":\"setData\",\"arguments\":[{\"type\":\"java.math.BigDecimal\",\"value\":\""
+                            + bri + "\"}]}";
+                } else {
+                    if (c.getProperty("function").equalsIgnoreCase(Value.FD_HUE)) {
+                        hue = c.getProperty("value");
+                        sat = "254";
+                        dalfunction = Value.DAL_COLORCONTROL;
+                    } else if (c.getProperty("function").equalsIgnoreCase(Value.FD_SAT)) {
+                        hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Behaviors.hue.toString()).getValueAsString();
+                        sat = c.getProperty("value");
+                        dalfunction = Value.DAL_COLORCONTROL;
+                    }
+                    body = "{\"operation\":\"setHS\",\"arguments\":[{\"type\":\"java.lang.Short\",\"value\":\""
+                            + hue + "\"},{\"type\":\"java.lang.Short\",\"value\":\"" + sat + "\"}]}";
+
                 }
-                body = "{\"operation\":\"setHS\",\"arguments\":[{\"type\":\"java.lang.Short\",\"value\":\""
-                        + hue + "\"},{\"type\":\"java.lang.Short\",\"value\":\"" + sat + "\"}]}";
                 LOG.log(Level.INFO, body);
                 try {
                     eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                            + ":ColorControl", body);
+                            + ":" + dalfunction, body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
+            }
+
+            case "2": { //WashingMachine commands
+                if (c.getProperty("function").equalsIgnoreCase("washing")) {
+                    if (c.getProperty("value").equals("START")) {
+                        body = "{\"operation\":\"execStartCycle\"}";
+                    }
+                    if (c.getProperty("value").equals("STOP")) {
+                        body = "{\"operation\":\"execStopCycle\"}";
+                    }
+                    if (c.getProperty("value").equals("DELAY")) {
+                        //valutare come passare questo ritardo
+                        String delay = c.getProperty("option");
+                        body = "{\"operation\":\"setStartTime\"}";
+                    }
+                    try {
+                        eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
+                                + ":" + Value.DAL_WASHINGMACHINE, body);
+                    } catch (IOException ex) {
+                        eahc.manageConnectionFailure();
+                    }
+                }
+                break;
             }
         }
     }
 
     @Override
-    protected void onEvent(EventTemplate e) {
+    protected void onEvent(EventTemplate e
+    ) {
     }
 
     @Override
     protected void onRun() {
-        eahc.closeWebSocket(flexWS);
+        eahc.updateWebSocket(flexWS);
     }
 
     /**

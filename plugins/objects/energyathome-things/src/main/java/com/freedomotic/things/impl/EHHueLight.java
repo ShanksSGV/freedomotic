@@ -16,7 +16,7 @@ import static com.freedomotic.things.impl.ElectricDevice.BEHAVIOR_POWERED;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-public class ColorLight
+public class EHHueLight
         extends Light {
 
     //partial implementation of i18n... waiting for future improvements
@@ -26,14 +26,22 @@ public class ColorLight
 
     private RangedIntBehaviorLogic hue;
     private RangedIntBehaviorLogic saturation;
-    protected final static String HUE_RED = "0";
+
+    protected final static String HUE_RED = "254";
     protected final static String HUE_BLUE = "170";
     protected final static String HUE_GREEN = "85";
-    protected final static String HUE_YELLOW = "42";
-    protected final static String HUE_FUCSIA = "212";
+    protected final static String HUE_YELLOW = "50";
+    protected final static String HUE_FUCSIA = "220";
+
+    protected final static String BRI_MIN = "1";
+    protected final static String BRI_LOW = "60";
+    protected final static String BRI_MED = "125";
+    protected final static String BRI_HIGH = "200";
+    protected final static String BRI_MAX = "254";
 
     protected final static String BEHAVIOR_HUE = "hue";
     protected final static String BEHAVIOR_SATURATION = "saturation";
+    protected final static String BEHAVIOR_BRIGHTNESS = "brightness";
 
     @Override
     public void init() {
@@ -53,7 +61,7 @@ public class ColorLight
             public void onUpperBoundValue(Config params, boolean fireCommand) {
                 boolean executed = executeCommand("set hue", params);
                 if (executed) {
-                    setHue(65537);
+                    setHue(254);
                 }
             }
 
@@ -136,7 +144,7 @@ public class ColorLight
         turnoff.setProperty("value", BooleanBehavior.VALUE_FALSE);
 
         Command setHueBlue = new Command();
-        setHueBlue.setName(messages.getString("actionhue") + getPojo().getName() + messages.getString("blue"));
+        setHueBlue.setName(messages.getString("actionhue") + getPojo().getName() + " " + messages.getString("blue"));
         setHueBlue.setDescription("the light " + getPojo().getName() + " changes its hue to blue");
         setHueBlue.setReceiver("app.events.sensors.behavior.request.objects");
         setHueBlue.setProperty("object", getPojo().getName());
@@ -145,7 +153,7 @@ public class ColorLight
         setHueBlue.setProperty("value", HUE_BLUE);
 
         Command setHueRed = new Command();
-        setHueRed.setName(messages.getString("actionhue") + getPojo().getName() + messages.getString("red"));
+        setHueRed.setName(messages.getString("actionhue") + getPojo().getName() + " " + messages.getString("red"));
         setHueRed.setDescription("the light " + getPojo().getName() + " changes its hue to red");
         setHueRed.setReceiver("app.events.sensors.behavior.request.objects");
         setHueRed.setProperty("object", getPojo().getName());
@@ -153,7 +161,7 @@ public class ColorLight
         setHueRed.setProperty("value", HUE_RED);
 
         Command setHueGreen = new Command();
-        setHueGreen.setName(messages.getString("actionhue") + getPojo().getName() + messages.getString("green"));
+        setHueGreen.setName(messages.getString("actionhue") + getPojo().getName() + " " + messages.getString("green"));
         setHueGreen.setDescription("the light " + getPojo().getName() + " changes its hue to green");
         setHueGreen.setReceiver("app.events.sensors.behavior.request.objects");
         setHueGreen.setProperty("object", getPojo().getName());
@@ -161,7 +169,7 @@ public class ColorLight
         setHueGreen.setProperty("value", HUE_GREEN);
 
         Command setHueWhite = new Command();
-        setHueWhite.setName(messages.getString("actionhue") + getPojo().getName() + messages.getString("white"));
+        setHueWhite.setName(messages.getString("actionhue") + getPojo().getName() + " " + messages.getString("white"));
         setHueWhite.setDescription("the light " + getPojo().getName() + " changes its hue to white");
         setHueWhite.setReceiver("app.events.sensors.behavior.request.objects");
         setHueWhite.setProperty("object", getPojo().getName());
@@ -169,7 +177,7 @@ public class ColorLight
         setHueWhite.setProperty("value", "0");
 
         Command setHueYellow = new Command();
-        setHueYellow.setName(messages.getString("actionhue") + getPojo().getName() + messages.getString("yellow"));
+        setHueYellow.setName(messages.getString("actionhue") + getPojo().getName() + " " + messages.getString("yellow"));
         setHueYellow.setDescription("the light " + getPojo().getName() + " changes its hue to yellow");
         setHueYellow.setReceiver("app.events.sensors.behavior.request.objects");
         setHueYellow.setProperty("object", getPojo().getName());
@@ -177,7 +185,7 @@ public class ColorLight
         setHueYellow.setProperty("value", HUE_YELLOW);
 
         Command setHueFucsia = new Command();
-        setHueFucsia.setName(messages.getString("actionhue") + getPojo().getName() + messages.getString("fucsia"));
+        setHueFucsia.setName(messages.getString("actionhue") + getPojo().getName() + " " + messages.getString("fucsia"));
         setHueFucsia.setDescription("the light " + getPojo().getName() + " changes its hue to fucsia");
         setHueFucsia.setReceiver("app.events.sensors.behavior.request.objects");
         setHueFucsia.setProperty("object", getPojo().getName());
@@ -185,12 +193,52 @@ public class ColorLight
         setHueFucsia.setProperty("value", HUE_FUCSIA);
 
         Command setMaxSaturation = new Command();
-        setMaxSaturation.setName(messages.getString("actionsaturation") + getPojo().getName() + messages.getString("maxvalue"));
+        setMaxSaturation.setName(messages.getString("actionsaturation") + getPojo().getName() + " " + messages.getString("maxvalue"));
         setMaxSaturation.setDescription("the light " + getPojo().getName() + " changes its saturation to max value");
         setMaxSaturation.setReceiver("app.events.sensors.behavior.request.objects");
         setMaxSaturation.setProperty("object", getPojo().getName());
         setMaxSaturation.setProperty("behavior", BEHAVIOR_SATURATION);
         setMaxSaturation.setProperty("value", "254");
+
+        Command setMinBrightness = new Command();
+        setMinBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("minvalue"));
+        setMinBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to min value");
+        setMinBrightness.setReceiver("app.events.sensors.behavior.request.objects");
+        setMinBrightness.setProperty("object", getPojo().getName());
+        setMinBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
+        setMinBrightness.setProperty("value", BRI_MIN);
+        
+        Command setLowBrightness = new Command();
+        setLowBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("lowvalue"));
+        setLowBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to low value");
+        setLowBrightness.setReceiver("app.events.sensors.behavior.request.objects");
+        setLowBrightness.setProperty("object", getPojo().getName());
+        setLowBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
+        setLowBrightness.setProperty("value", BRI_LOW);
+        
+        Command setMedBrightness = new Command();
+        setMedBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("medvalue"));
+        setMedBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to med value");
+        setMedBrightness.setReceiver("app.events.sensors.behavior.request.objects");
+        setMedBrightness.setProperty("object", getPojo().getName());
+        setMedBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
+        setMedBrightness.setProperty("value", BRI_MED);
+        
+        Command setHighBrightness = new Command();
+        setHighBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("highvalue"));
+        setHighBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to high value");
+        setHighBrightness.setReceiver("app.events.sensors.behavior.request.objects");
+        setHighBrightness.setProperty("object", getPojo().getName());
+        setHighBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
+        setHighBrightness.setProperty("value", BRI_HIGH);
+        
+        Command setMaxBrightness = new Command();
+        setMaxBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("maxvalue"));
+        setMaxBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to max value");
+        setMaxBrightness.setReceiver("app.events.sensors.behavior.request.objects");
+        setMaxBrightness.setProperty("object", getPojo().getName());
+        setMaxBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
+        setMaxBrightness.setProperty("value", BRI_MAX);
 
         commandRepository.create(turnon);
         commandRepository.create(turnoff);
@@ -201,6 +249,11 @@ public class ColorLight
         commandRepository.create(setHueYellow);
         commandRepository.create(setHueFucsia);
         commandRepository.create(setMaxSaturation);
+        commandRepository.create(setMinBrightness);
+        commandRepository.create(setLowBrightness);
+        commandRepository.create(setMedBrightness);
+        commandRepository.create(setHighBrightness);
+        commandRepository.create(setMaxBrightness);
     }
 
     @Override

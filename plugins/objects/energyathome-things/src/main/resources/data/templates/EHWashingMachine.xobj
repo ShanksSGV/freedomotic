@@ -1,9 +1,9 @@
 <object>
-  <name>OnOff</name>
-  <description>An Energy@Home Smart Plug</description>
+  <name>EHWashingMachine</name>
+  <description>An Energy@Home Washing Machine</description>
   <actAs>unimplemented</actAs>
-  <type>EnvObject.ElectricDevice.SmartPlug</type>
-  <hierarchy>com.freedomotic.things.impl.SmartPlug</hierarchy>
+  <type>EnvObject.ElectricDevice.EHWashingMachine</type>
+  <hierarchy>com.freedomotic.things.impl.EHWashingMachine</hierarchy>
   <protocol>energyathome</protocol>
   <phisicalAddress>unknown</phisicalAddress>
   <behaviors>
@@ -14,6 +14,19 @@
       <priority>-1</priority>
       <value>false</value>
     </com.freedomotic.model.object.BooleanBehavior>
+
+<com.freedomotic.model.object.RangedIntBehavior>
+      <name>delay</name>
+      <description>Set a delay for starting time</description>
+      <active>true</active>
+      <priority>-1</priority>
+      <readOnly>false</readOnly>
+      <value>30</value>
+      <max>120</max>
+      <min>30</min>
+      <step>30</step>
+      
+    </com.freedomotic.model.object.RangedIntBehavior>	
  <com.freedomotic.model.object.RangedIntBehavior>
       <name>power_consumption</name>
       <description></description>
@@ -26,6 +39,7 @@
       <step>1</step>
       <scale>10</scale>
     </com.freedomotic.model.object.RangedIntBehavior>	
+
   </behaviors>
   <representation>
     <view>
@@ -33,7 +47,7 @@
       <intersecable>false</intersecable>
       <offset x="0" y="0"/>
       <rotation>0.0</rotation>
-      <icon>ehplug-off.png</icon>
+      <icon>wash_off.png</icon>
       <fillColor>#000000</fillColor>
       <textColor>#000000</textColor>
       <borderColor>#000000</borderColor>
@@ -49,7 +63,7 @@
       <intersecable>false</intersecable>
       <offset x="0" y="0"/>
       <rotation>0.0</rotation>
-      <icon>ehplug-on.png</icon>
+      <icon>wash_on.png</icon>
       <fillColor>#000000</fillColor>
       <textColor>#000000</textColor>
       <borderColor>#000000</borderColor>
@@ -62,8 +76,9 @@
     </view>
   </representation>
   <actions>
-    <property name="turn off" value="Turn off E@H device"/>
-    <property name="turn on" value="Turn on E@H device"/>
+    <property name="turn off" value="Stop washing machine cycle"/>
+    <property name="turn on" value="Start washing machine cycle"/>
+    <property name="set delay" value="Start washing machine cycle with delay"/>
   </actions>
   <triggers>
     <property name="" value="powered"/>

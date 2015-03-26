@@ -10,7 +10,7 @@
       <property name="protocol" value="energyathome"/>
       <property name="name" value="@owner.object.name"/> 
       <property name="identifier" value="@owner.object.address"/>
-      <property name="state" value="OFF"/>
+      <property name="value" value="OFF"/>
       <property name="code" value="0" />
     </properties>
   </properties>
