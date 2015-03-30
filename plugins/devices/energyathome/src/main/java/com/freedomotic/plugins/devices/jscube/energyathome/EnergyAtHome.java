@@ -31,6 +31,8 @@ import java.util.logging.Logger;
 
 import com.freedomotic.api.EventTemplate;
 import com.freedomotic.api.Protocol;
+import com.freedomotic.bus.BusService;
+import com.freedomotic.events.MessageEvent;
 import com.freedomotic.events.ProtocolRead;
 import com.freedomotic.exceptions.PluginStartupException;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.Value;
@@ -43,12 +45,14 @@ public class EnergyAtHome extends Protocol {
 
     @Inject
     private ThingRepository thingsRepository;
+    private BusService busService;
 
     protected static URL url;
     protected static HttpURLConnection connection;
 
     private final String flexIP = configuration.getProperty("flexIP");
     private final String flexWS = configuration.getProperty("flexWS");
+    private final boolean saveToLog = configuration.getBooleanProperty("log", false);
     private final String protocolName = configuration.getProperty("protocol.name");
     private final int POLLING_TIME = configuration.getIntProperty("pollingtime", 5000);
 
@@ -78,7 +82,7 @@ public class EnergyAtHome extends Protocol {
         if (!eahc.openWebSocket(flexWS)) {
             throw new PluginStartupException("Cannot register to Scubox WebSocket Endpoint");
         }
-
+        setDescription("Energy@Home plugin connected!");
     }
 
     @Override
@@ -192,5 +196,20 @@ public class EnergyAtHome extends Protocol {
         event.addProperty("object.class", type);
         LOG.log(Level.INFO, event.getPayload().toString());
         notifyEvent(event);
+
+        if (saveToLog) {
+            if (property == Behaviors.power_consumption) {
+                eahc.log(address.split(":")[1], value);
+            }
+
+        }
+
+    }
+
+    private void sendGUIToast(String text) {
+        MessageEvent callout = new MessageEvent(this, text);
+        callout.setType("callout"); //display as callout on frontends
+        callout.setExpiration(15 * 1000);//message lasts 10 seconds
+        busService.send(callout);
     }
 }

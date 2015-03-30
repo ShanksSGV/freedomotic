@@ -29,13 +29,19 @@ import com.freedomotic.plugins.devices.jscube.energyathome.utils.Value;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.java_websocket.drafts.Draft_17;
@@ -90,7 +96,7 @@ public class EnergyAtHomeController implements MessageListener {
 
                 if (type != null) {
                     String status = "false";
-                    if ((type.equalsIgnoreCase(Value.FD_SMARTPLUG))||(type.equalsIgnoreCase(Value.FD_HUELIGHT))) {
+                    if ((type.equalsIgnoreCase(Value.FD_SMARTPLUG)) || (type.equalsIgnoreCase(Value.FD_HUELIGHT))) {
                         status = String.valueOf(getStatus(address));
                     }
                     eah.buildEvent(name, address, Behaviors.powered, status, type);
@@ -260,7 +266,8 @@ public class EnergyAtHomeController implements MessageListener {
             if (dalFunctionId.equalsIgnoreCase(Value.DAL_ENERGYMETER)) {
                 if (property.equalsIgnoreCase("current")) {
                     value = properties.getJSONObject("dal.function.property.value").getString("level");
-                    value = String.valueOf(Double.valueOf(value) * 10);
+                    value = String.valueOf(Double.valueOf(value) * 10); //only way to have the decimal 
+
                     eah.buildEvent(null, address, Behaviors.power_consumption, value, null);
                 }
             }
@@ -268,6 +275,34 @@ public class EnergyAtHomeController implements MessageListener {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    protected void log(String name, String value) {
+        try {
+            String path = System.getProperty("user.dir") + "/plugins/devices/energyathome/log/";
+            String data = new SimpleDateFormat("yyyy_MM_dd_").format(Calendar.getInstance().getTime());
+            File file = new File(path+data+name+".txt");
+            // if file doesn't exists, then create it
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            String timeStamp = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime());
+            String temp = timeStamp + "," + name + "," + value + "\n";
+
+            try (PrintWriter out = new PrintWriter(new FileWriter(file, true))) {
+                BufferedReader in = new BufferedReader(new FileReader(file));
+                String str = in.readLine();
+                while (str != null) {
+                    str = in.readLine();
+                }
+                in.close();
+                out.println(str + temp);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 }

@@ -10,7 +10,7 @@
     <artifactId>energyathome</artifactId>
     <packaging>jar</packaging>
     <name>energyathome</name>
-    <version>3.3</version>
+    <version>3.4</version>
     <developers>
         <developer>
             <id>danny</id>
