@@ -1,9 +1,9 @@
 <object>
-  <name>EHWashingMachine</name>
-  <description>An Energy@Home Washing Machine</description>
+  <name>EHOven</name>
+  <description>An Energy@Home Oven</description>
   <actAs>unimplemented</actAs>
-  <type>EnvObject.ElectricDevice.EHWashingMachine</type>
-  <hierarchy>com.freedomotic.things.impl.EHWashingMachine</hierarchy>
+  <type>EnvObject.ElectricDevice.EHOven</type>
+  <hierarchy>com.freedomotic.things.impl.EHOven</hierarchy>
   <protocol>energyathome</protocol>
   <phisicalAddress>unknown</phisicalAddress>
   <behaviors>
@@ -14,17 +14,7 @@
       <priority>-1</priority>
       <value>false</value>
     </com.freedomotic.model.object.BooleanBehavior>
-<com.freedomotic.model.object.RangedIntBehavior>
-      <name>delay</name>
-      <description>Set a delay for starting time</description>
-      <active>true</active>
-      <priority>-1</priority>
-      <readOnly>false</readOnly>
-      <value>0</value>
-      <max>120</max>
-      <min>30</min>
-      <step>30</step>
-    </com.freedomotic.model.object.RangedIntBehavior>	
+
  <com.freedomotic.model.object.RangedIntBehavior>
       <name>power_consumption</name>
       <description></description>
@@ -37,20 +27,7 @@
       <step>1</step>
       <scale>10</scale>
     </com.freedomotic.model.object.RangedIntBehavior>	
-    <com.freedomotic.model.object.ListBehavior>
-      <name>washingcycle</name>
-      <description>Washing cycle</description>
-      <active>true</active>
-      <priority>-1</priority>
-      <selected>0</selected>
-      <list>
-        <string>Custom</string>
-        <string>Cotton</string>
-        <string>Darks</string>
-        <string>Whites</string>
-        <string>Wool</string>
-      </list>
-    </com.freedomotic.model.object.ListBehavior>
+
   </behaviors>
   <representation>
     <view>
@@ -87,10 +64,8 @@
     </view>
   </representation>
   <actions>
-    <property name="turn off" value="Stop washing machine cycle"/>
-    <property name="turn on" value="Start washing machine cycle"/>
-    <property name="set washing cycle" value="Select the washing cycle"/>
-    <property name="set delay" value="Start washing machine cycle with delay"/>
+    <property name="turn off" value="Turn off E@H oven"/>
+    <property name="turn on" value="Turn on E@H oven"/>
   </actions>
   <triggers>
     <property name="" value="powered"/>

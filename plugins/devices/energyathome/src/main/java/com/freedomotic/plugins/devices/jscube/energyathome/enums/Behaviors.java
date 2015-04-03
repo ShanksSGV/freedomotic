@@ -20,7 +20,7 @@
  * along with Freedomotic; see the file COPYING.  If not, see
  * <http://www.gnu.org/licenses/>.
  */
-
+/*
 package com.freedomotic.plugins.devices.jscube.energyathome.enums;
 
 public enum Behaviors { //taken from energy@home object templates
@@ -29,4 +29,4 @@ public enum Behaviors { //taken from energy@home object templates
     saturation,
     hue,
     brightness;
-}
+}*/

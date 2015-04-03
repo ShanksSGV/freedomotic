@@ -10,7 +10,7 @@
     <artifactId>energyathome-things</artifactId>
     <packaging>jar</packaging>
     <name>energyathome-things</name>
-    <version>3.2</version>
+    <version>3.3</version>
     <developers>
         <developer>
             <id>danny</id>

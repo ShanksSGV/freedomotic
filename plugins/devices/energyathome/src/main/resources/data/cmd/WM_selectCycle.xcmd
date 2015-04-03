@@ -1,7 +1,7 @@
 <com.freedomotic.reactions.Command>
-  <name>Start washing machine cycle with delay</name>
+  <name>Select the washing cycle</name>
   <receiver>app.actuators.protocol.energyathome.in</receiver>
-  <description>A E@H washing machine will start with some delay</description>
+  <description>Select the cycle of a E@H washing machine</description>
   <hardwareLevel>true</hardwareLevel>
   <delay>0</delay>
   <timeout>0</timeout>
@@ -11,9 +11,8 @@
         <property name="name" value="@owner.object.name"/> 
         <property name="identifier" value="@owner.object.address"/>
         <property name="code" value="2" />
-        <property name="function" value="washing"/>
-        <property name="value" value="DELAY"/>
-        <property name="option" value="@request.value"/>
+        <property name="function" value="cycle"/>
+        <property name="value" value="@request.value"/>
     </properties>
   </properties>
 </com.freedomotic.reactions.Command>

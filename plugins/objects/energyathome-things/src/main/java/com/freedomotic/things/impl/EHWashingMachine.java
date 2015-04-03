@@ -7,9 +7,11 @@
  */
 package com.freedomotic.things.impl;
 
+import com.freedomotic.behaviors.ListBehaviorLogic;
 import com.freedomotic.behaviors.RangedIntBehaviorLogic;
 import com.freedomotic.model.ds.Config;
 import com.freedomotic.model.object.BooleanBehavior;
+import com.freedomotic.model.object.ListBehavior;
 import com.freedomotic.model.object.RangedIntBehavior;
 import com.freedomotic.reactions.Command;
 import static com.freedomotic.things.impl.ElectricDevice.BEHAVIOR_POWERED;
@@ -29,6 +31,8 @@ public class EHWashingMachine extends ElectricDevice {
 
     private RangedIntBehaviorLogic delay;
     protected final static String BEHAVIOR_DELAY = "delay";
+    private ListBehaviorLogic washingCycle;
+    protected final static String BEHAVIOR_WASHINGCYCLE = "washingcycle";
 
     @Override
     public void init() {
@@ -37,10 +41,7 @@ public class EHWashingMachine extends ElectricDevice {
 
             @Override
             public void onLowerBoundValue(Config params, boolean fireCommand) {
-                boolean executed = executeCommand("set delay", params);
-                if (executed) {
-                    setDelay(delay.getMin(), params, fireCommand);
-                }
+                //nothing to do if delay is 0
             }
 
             @Override
@@ -61,7 +62,18 @@ public class EHWashingMachine extends ElectricDevice {
         }
         );
 
+        // Controls the current cycle whitin a washing program (ready, washing, rinsing, spinning, finished)
+        washingCycle = new ListBehaviorLogic((ListBehavior) getPojo().getBehavior(BEHAVIOR_WASHINGCYCLE));
+        washingCycle.addListener(new ListBehaviorLogic.Listener() {
+
+            @Override
+            public void selectedChanged(Config params, boolean fireCommand) {
+                setWashingCycle(params.getProperty("value"), params, fireCommand);
+            }
+        });
+
         registerBehavior(delay);
+        registerBehavior(washingCycle);
 
         super.init();
     }
@@ -69,6 +81,23 @@ public class EHWashingMachine extends ElectricDevice {
     public void setDelay(int value, Config params, boolean fireCommand) {
         if (delay.getValue() != value) {
             delay.setValue(value);
+            setChanged(true);
+        }
+
+    }
+
+    public void setWashingCycle(String selectedCycle, Config params, boolean fireCommand) {
+        if (fireCommand) {
+            // Action on the hardware is required
+            if (executeCommand("set washing cycle", params)) {
+                //Executed succesfully, update the value
+                washingCycle.setSelected(selectedCycle);
+                setChanged(true);
+
+            }
+        } else {
+            // Just a change in the virtual thing status
+            washingCycle.setSelected(selectedCycle);
             setChanged(true);
         }
     }
@@ -86,14 +115,14 @@ public class EHWashingMachine extends ElectricDevice {
         start.setProperty("value", BooleanBehavior.VALUE_TRUE);
 
         Command startdelay30 = new Command();
-        startdelay30.setName(messages.getString("start") + getPojo().getName() + messages.getString("delay30"));
+        startdelay30.setName(messages.getString("start") + getPojo().getName() + " " + messages.getString("delay30"));
         startdelay30.setReceiver("app.events.sensors.behavior.request.objects");
         startdelay30.setProperty("object", getPojo().getName());
         startdelay30.setProperty("behavior", BEHAVIOR_DELAY);
         startdelay30.setProperty("value", "30");
 
         Command startdelay60 = new Command();
-        startdelay60.setName(messages.getString("start") + getPojo().getName() + messages.getString("delay60"));
+        startdelay60.setName(messages.getString("start") + getPojo().getName() + " " + messages.getString("delay60"));
         startdelay60.setReceiver("app.events.sensors.behavior.request.objects");
         startdelay60.setProperty("object", getPojo().getName());
         startdelay60.setProperty("behavior", BEHAVIOR_DELAY);

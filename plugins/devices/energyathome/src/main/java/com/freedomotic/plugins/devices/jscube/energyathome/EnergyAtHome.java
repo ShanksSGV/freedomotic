@@ -21,8 +21,6 @@
  */
 package com.freedomotic.plugins.devices.jscube.energyathome;
 
-import com.freedomotic.plugins.devices.jscube.energyathome.enums.*;
-
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -40,6 +38,8 @@ import com.freedomotic.reactions.Command;
 import com.freedomotic.things.ThingRepository;
 
 import com.google.inject.Inject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 public class EnergyAtHome extends Protocol {
 
@@ -123,7 +123,7 @@ public class EnergyAtHome extends Protocol {
                         sat = "254";
                         dalfunction = Value.DAL_COLORCONTROL;
                     } else if (c.getProperty("function").equalsIgnoreCase(Value.FD_SAT)) {
-                        hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Behaviors.hue.toString()).getValueAsString();
+                        hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Value.FD_HUE).getValueAsString();
                         sat = c.getProperty("value");
                         dalfunction = Value.DAL_COLORCONTROL;
                     }
@@ -141,7 +141,7 @@ public class EnergyAtHome extends Protocol {
             }
 
             case "2": { //WashingMachine commands
-                if (c.getProperty("function").equalsIgnoreCase("washing")) {
+                if (c.getProperty("function").equalsIgnoreCase("status")) {
                     if (c.getProperty("value").equals("START")) {
                         body = "{\"operation\":\"execStartCycle\"}";
                     }
@@ -153,9 +153,38 @@ public class EnergyAtHome extends Protocol {
                         String delay = c.getProperty("option");
                         body = "{\"operation\":\"setStartTime\"}";
                     }
+                } else if (c.getProperty("function").equalsIgnoreCase("cycle")) {
+                    JSONObject json = new JSONObject();
+                    JSONArray args = new JSONArray();
+                    JSONObject argsObj = new JSONObject();
+                    argsObj.put("type", "java.lang.Short");
+                    argsObj.put("value", "3");  //da sostituire con il numero del ciclo associato...
+                    args.add(argsObj);
+                    json.put("arguments", args);
+                    json.put("operation","setCycle");
+                    body = json.toJSONString();
+                    //body = "{\"operation\":\"execStartCycle\"}";
+                }
+                try {
+                    eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
+                            + ":" + Value.DAL_WASHINGMACHINE, body);
+                } catch (IOException ex) {
+                    eahc.manageConnectionFailure();
+                }
+                break;
+            }
+
+            case "3": { //Oven commands
+                if (c.getProperty("function").equalsIgnoreCase("status")) {
+                    if (c.getProperty("value").equals("ON")) {
+                        body = "{\"operation\":\"execStartCycle\"}";
+                    }
+                    if (c.getProperty("value").equals("OFF")) {
+                        body = "{\"operation\":\"execStopCycle\"}";
+                    }
                     try {
                         eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                                + ":" + Value.DAL_WASHINGMACHINE, body);
+                                + ":" + Value.DAL_OVEN, body);
                     } catch (IOException ex) {
                         eahc.manageConnectionFailure();
                     }
@@ -185,20 +214,20 @@ public class EnergyAtHome extends Protocol {
      * @param value
      * @param type
      */
-    protected void buildEvent(String name, String address, Behaviors property,
+    protected void buildEvent(String name, String address, String property,
             String value, String type) {
         ProtocolRead event = new ProtocolRead(this, protocolName, address);
         event.addProperty("object.name", name);
         event.addProperty("object.protocol", protocolName);
         event.addProperty("object.address", address);
-        event.addProperty("behavior.name", property.toString().toLowerCase());
+        event.addProperty("behavior.name", property);
         event.addProperty("behaviorValue", value);
         event.addProperty("object.class", type);
         LOG.log(Level.INFO, event.getPayload().toString());
         notifyEvent(event);
 
         if (saveToLog) {
-            if (property == Behaviors.power_consumption) {
+            if (property.equalsIgnoreCase(Value.FD_POWERCONSUMPTION)) {
                 eahc.log(address.split(":")[1], value);
             }
 

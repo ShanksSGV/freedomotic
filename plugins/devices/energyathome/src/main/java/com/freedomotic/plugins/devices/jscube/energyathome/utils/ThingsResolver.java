@@ -14,7 +14,6 @@ package com.freedomotic.plugins.devices.jscube.energyathome.utils;
 public class ThingsResolver {
 
     //Raw implementation, waiting for future improvements..
-    
     public static String resolver(String line) {
 
         if ((line.contains(Value.DAL_ONOFF)) && (line.contains(Value.DAL_ENERGYMETER))) {
@@ -25,6 +24,9 @@ public class ThingsResolver {
         }
         if ((line.contains(Value.DAL_WASHINGMACHINE)) && (line.contains(Value.DAL_ENERGYMETER))) {
             return Value.FD_WASHINGMACHINE;
+        }
+        if ((line.contains(Value.DAL_OVEN)) && (line.contains(Value.DAL_ENERGYMETER))) {
+            return Value.FD_OVEN;
         } else {
             return null;
         }

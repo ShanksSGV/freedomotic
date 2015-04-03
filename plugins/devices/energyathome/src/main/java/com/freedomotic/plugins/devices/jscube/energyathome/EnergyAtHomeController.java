@@ -21,7 +21,6 @@
  */
 package com.freedomotic.plugins.devices.jscube.energyathome;
 
-import com.freedomotic.plugins.devices.jscube.energyathome.enums.Behaviors;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageEvent;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageListener;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.ThingsResolver;
@@ -42,18 +41,21 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class EnergyAtHomeController implements MessageListener {
 
     EnergyAtHomeWebSocket wseah;
+    JSONParser parser = new JSONParser();
 
     protected static URL url;
     protected static HttpURLConnection connection;
@@ -82,13 +84,13 @@ public class EnergyAtHomeController implements MessageListener {
     protected boolean getDevices() throws IOException {
         String line = getToFlex(flexIP + "api/devices");
         try {
-            JSONArray json = new JSONArray(line);
-            for (int i = 0; i < json.length(); i++) {
-                String address = json.getJSONObject(i).getString(
-                        "dal.device.UID");
-
-                String name = json.getJSONObject(i).getString(
-                        "dal.device.UID").split(":")[1];
+            Object obj = parser.parse(line);
+            JSONArray json = (JSONArray) obj;
+            Iterator<JSONObject> it = json.iterator();
+            while (it.hasNext()) {
+                JSONObject temp = it.next();
+                String address = (String) temp.get("dal.device.UID");
+                String name = ((String) temp.get("dal.device.UID")).split(":")[1];
 
                 String type = getType(address);
 
@@ -99,14 +101,14 @@ public class EnergyAtHomeController implements MessageListener {
                     if ((type.equalsIgnoreCase(Value.FD_SMARTPLUG)) || (type.equalsIgnoreCase(Value.FD_HUELIGHT))) {
                         status = String.valueOf(getStatus(address));
                     }
-                    eah.buildEvent(name, address, Behaviors.powered, status, type);
+                    eah.buildEvent(name, address, Value.FD_POWER, status, type);
                 }
 
             }
             return true;
-        } catch (JSONException e) {
+        } catch (ParseException ex) {
             LOG.log(Level.INFO, "Error in parsing JSON! Plugin will stop!");
-            e.printStackTrace();
+            ex.printStackTrace();
             return false;
         }
     }
@@ -139,9 +141,10 @@ public class EnergyAtHomeController implements MessageListener {
         String body = "{\"operation\":\"getData\"}";
         String line = postToFlex(flexIP + "api/functions/" + address + ":OnOff", body);
         try {
-            JSONObject json = new JSONObject(line);
-            status = json.getJSONObject("result").getBoolean("value");
-        } catch (JSONException e) {
+            Object obj = parser.parse(line);
+            JSONObject json = (JSONObject) obj;
+            status = (Boolean) ((JSONObject) json.get("result")).get("value");
+        } catch (ParseException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -252,27 +255,28 @@ public class EnergyAtHomeController implements MessageListener {
         String value;
         String dalFunctionId;
         try {
-            JSONObject json = new JSONObject(me.getBody());
-            JSONObject properties = json.getJSONObject("properties");
-            String temp = properties.getString("dal.function.UID");
+            Object obj = parser.parse(me.getBody());
+            JSONObject json = (JSONObject)obj;
+            JSONObject properties = (JSONObject)json.get("properties");
+            String temp = (String)properties.get("dal.function.UID");
             int i = temp.lastIndexOf(":");
             address = temp.substring(0, i);
             dalFunctionId = temp.substring(i + 1);
-            String property = properties.getString("dal.function.property.name");
+            String property = (String)properties.get("dal.function.property.name");
             if (dalFunctionId.equalsIgnoreCase(Value.DAL_ONOFF)) {
-                value = properties.getJSONObject("dal.function.property.value").getString("value");
-                eah.buildEvent(null, address, Behaviors.powered, value, null);
+                value = ((JSONObject)properties.get("dal.function.property.value")).get("value").toString();
+                eah.buildEvent(null, address, Value.FD_POWER, value, null);
             }
             if (dalFunctionId.equalsIgnoreCase(Value.DAL_ENERGYMETER)) {
                 if (property.equalsIgnoreCase("current")) {
-                    value = properties.getJSONObject("dal.function.property.value").getString("level");
+                    value = (String)((JSONObject)properties.get("dal.function.property.value")).get("level");
                     value = String.valueOf(Double.valueOf(value) * 10); //only way to have the decimal 
 
-                    eah.buildEvent(null, address, Behaviors.power_consumption, value, null);
+                    eah.buildEvent(null, address, Value.FD_POWERCONSUMPTION, value, null);
                 }
             }
 
-        } catch (JSONException e) {
+        } catch (ParseException e) {
             e.printStackTrace();
         }
     }
@@ -281,7 +285,7 @@ public class EnergyAtHomeController implements MessageListener {
         try {
             String path = System.getProperty("user.dir") + "/plugins/devices/energyathome/log/";
             String data = new SimpleDateFormat("yyyy_MM_dd_").format(Calendar.getInstance().getTime());
-            File file = new File(path+data+name+".txt");
+            File file = new File(path + data + name + ".txt");
             // if file doesn't exists, then create it
             if (!file.exists()) {
                 file.createNewFile();

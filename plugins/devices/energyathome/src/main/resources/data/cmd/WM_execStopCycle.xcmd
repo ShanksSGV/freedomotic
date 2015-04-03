@@ -1,7 +1,7 @@
 <com.freedomotic.reactions.Command>
-  <name>Start washing machine cycle</name>
+  <name>Stop washing machine cycle</name>
   <receiver>app.actuators.protocol.energyathome.in</receiver>
-  <description>A E@H washing machine starts its cycle</description>
+  <description>A E@H washing machine stops its cycle</description>
   <hardwareLevel>true</hardwareLevel>
   <delay>0</delay>
   <timeout>0</timeout>
@@ -10,9 +10,9 @@
         <property name="protocol" value="energyathome"/>
         <property name="name" value="@owner.object.name"/> 
         <property name="identifier" value="@owner.object.address"/>
-        <property name="code" value="2" />
-        <property name="function" value="washing"/>
-        <property name="value" value="START"/>
+        <property name="code" value="2" />      
+        <property name="function" value="status"/>
+        <property name="value" value="STOP"/>
     </properties>
   </properties>
 </com.freedomotic.reactions.Command>
