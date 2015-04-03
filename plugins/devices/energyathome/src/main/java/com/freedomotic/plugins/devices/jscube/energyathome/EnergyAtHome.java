@@ -24,6 +24,7 @@ package com.freedomotic.plugins.devices.jscube.energyathome;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,8 +37,8 @@ import com.freedomotic.exceptions.PluginStartupException;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.Value;
 import com.freedomotic.reactions.Command;
 import com.freedomotic.things.ThingRepository;
-
 import com.google.inject.Inject;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -102,8 +103,12 @@ public class EnergyAtHome extends Protocol {
                     body = "{\"operation\":\"setFalse\"}";
                 }
                 try {
-                    eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                            + ":" + Value.DAL_ONOFF, body);
+                    eahc.postToFlex(flexIP + "api/functions/" 
+                    		+ URLEncoder.encode(
+                    				c.getProperty("identifier")
+                    				+ ":" 
+                    				+ Value.DAL_ONOFF,"UTF-8")
+                    		, body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
@@ -133,8 +138,12 @@ public class EnergyAtHome extends Protocol {
                 }
                 LOG.log(Level.INFO, body);
                 try {
-                    eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                            + ":" + dalfunction, body);
+                    eahc.postToFlex(flexIP + "api/functions/"
+                    		+ URLEncoder.encode(
+                    				c.getProperty("identifier")
+                    				+ ":"
+                    				+ dalfunction,"UTF-8")
+                    		, body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
@@ -166,8 +175,11 @@ public class EnergyAtHome extends Protocol {
                     //body = "{\"operation\":\"execStartCycle\"}";
                 }
                 try {
-                    eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                            + ":" + Value.DAL_WASHINGMACHINE, body);
+                    eahc.postToFlex(flexIP + "api/functions/" 
+                    		+URLEncoder.encode( c.getProperty("identifier")
+                            	+ ":" 
+                            	+ Value.DAL_WASHINGMACHINE,"UTF-8")
+                            , body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
@@ -183,8 +195,11 @@ public class EnergyAtHome extends Protocol {
                         body = "{\"operation\":\"execStopCycle\"}";
                     }
                     try {
-                        eahc.postToFlex(flexIP + "api/functions/" + c.getProperty("identifier")
-                                + ":" + Value.DAL_OVEN, body);
+                        eahc.postToFlex(flexIP + "api/functions/" +
+                        		URLEncoder.encode(c.getProperty("identifier")
+                        				+ ":" 
+                        				+ Value.DAL_OVEN,"UTF-8")
+                                , body);
                     } catch (IOException ex) {
                         eahc.manageConnectionFailure();
                     }
