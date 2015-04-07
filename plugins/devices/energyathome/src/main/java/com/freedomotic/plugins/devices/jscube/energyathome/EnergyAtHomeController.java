@@ -39,14 +39,16 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.java_websocket.drafts.Draft_17;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -139,7 +141,7 @@ public class EnergyAtHomeController implements MessageListener {
     protected boolean getStatus(String address) throws IOException {
         boolean status = false;
         String body = "{\"operation\":\"getData\"}";
-        String line = postToFlex(flexIP + "api/functions/" + address + ":OnOff", body);
+        String line = postToFlex(flexIP + "api/functions/" + URLEncoder.encode(address + ":OnOff","UTF-8"), body);
         try {
             Object obj = parser.parse(line);
             JSONObject json = (JSONObject) obj;
@@ -186,7 +188,8 @@ public class EnergyAtHomeController implements MessageListener {
      */
     protected String postToFlex(String urlToInvoke, String body) throws IOException {
         try {
-            url = new URL(urlToInvoke.replaceAll(" ", "%20"));
+        	URI uri=new URI(urlToInvoke);
+            url = uri.toURL();
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
@@ -210,10 +213,15 @@ public class EnergyAtHomeController implements MessageListener {
             LOG.log(Level.INFO,
                     "Malformed URL! Please check IP address in manifest.xml!");
 
-        }
+        } catch (URISyntaxException e) {
+			LOG.log(Level.INFO,
+					"Bad url syntax:"+urlToInvoke);
+			e.printStackTrace();
+		}
         return null;
     }
 
+    
     /**
      * Counts API connection failures and marks the plugin as FAILED if the max
      * number of subsequent failed connection is reached.
@@ -269,7 +277,7 @@ public class EnergyAtHomeController implements MessageListener {
             }
             if (dalFunctionId.equalsIgnoreCase(Value.DAL_ENERGYMETER)) {
                 if (property.equalsIgnoreCase("current")) {
-                    value = (String)((JSONObject)properties.get("dal.function.property.value")).get("level");
+                    value = ((JSONObject)properties.get("dal.function.property.value")).get("level").toString();
                     value = String.valueOf(Double.valueOf(value) * 10); //only way to have the decimal 
 
                     eah.buildEvent(null, address, Value.FD_POWERCONSUMPTION, value, null);
