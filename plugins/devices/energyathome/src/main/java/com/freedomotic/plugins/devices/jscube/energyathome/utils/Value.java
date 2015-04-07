@@ -17,7 +17,7 @@ public class Value {
     public static final String DAL_ONOFF = "OnOff";
     public static final String DAL_ENERGYMETER = "EnergyMeter";
     public static final String DAL_COLORCONTROL = "ColorControl";
-    public static final String DAL_LEVELCONTROL = "LevelControl";
+    public static final String DAL_LEVELCONTROL = "MultiLevelControl";
     public static final String DAL_WASHINGMACHINE = "WashingMachine";
     public static final String DAL_OVEN = "Oven";
 
