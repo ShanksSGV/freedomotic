@@ -32,6 +32,7 @@ public class EHHueLight
     protected final static String HUE_GREEN = "85";
     protected final static String HUE_YELLOW = "50";
     protected final static String HUE_FUCSIA = "220";
+    protected final static String HUE_WHITE = "0"; //not a clean solution...
 
     protected final static String BRI_MIN = "1";
     protected final static String BRI_LOW = "60";
@@ -52,25 +53,28 @@ public class EHHueLight
             @Override
             public void onLowerBoundValue(Config params, boolean fireCommand) {
                 boolean executed = executeCommand("set hue", params);
-                if (executed) {
-                    setHue(0);
-                }
+                //if (executed) {
+                setHue(0);
+                setSaturation(0);
+                //}
             }
 
             @Override
             public void onUpperBoundValue(Config params, boolean fireCommand) {
                 boolean executed = executeCommand("set hue", params);
-                if (executed) {
-                    setHue(254);
-                }
+                //if (executed) {
+                setHue(254);
+                setSaturation(254);
+                //}
             }
 
             @Override
             public void onRangeValue(int rangeValue, Config params, boolean fireCommand) {
                 boolean executed = executeCommand("set hue", params);
-                if (executed) {
-                    setHue(rangeValue);
-                }
+                //if (executed) {
+                setHue(rangeValue);
+                setSaturation(254);
+                //}
             }
         });
 
@@ -82,25 +86,25 @@ public class EHHueLight
             @Override
             public void onLowerBoundValue(Config params, boolean fireCommand) {
                 boolean executed = executeCommand("set saturation", params);
-                if (executed) {
-                    setSaturation(0);
-                }
+                //if (executed) {
+                setSaturation(0);
+                //}
             }
 
             @Override
             public void onUpperBoundValue(Config params, boolean fireCommand) {
                 boolean executed = executeCommand("set saturation", params);
-                if (executed) {
-                    setSaturation(254);
-                }
+                //if (executed) {
+                setSaturation(254);
+                //}
             }
 
             @Override
             public void onRangeValue(int rangeValue, Config params, boolean fireCommand) {
                 boolean executed = executeCommand("set saturation", params);
-                if (executed) {
-                    setSaturation(rangeValue);
-                }
+                //if (executed) {
+                setSaturation(rangeValue);
+                //}
             }
         });
         //register this behavior to the superclass to make it visible to it
@@ -111,17 +115,17 @@ public class EHHueLight
     }
 
     public void setHue(int rangeValue) {
-        if (hue.getValue() != rangeValue) {
-            hue.setValue(rangeValue);
-            setChanged(true);
-        }
+        //if (hue.getValue() != rangeValue) {
+        hue.setValue(rangeValue);
+        setChanged(true);
+        //}
     }
 
     public void setSaturation(int rangeValue) {
-        if (saturation.getValue() != rangeValue) {
-            saturation.setValue(rangeValue);
-            setChanged(true);
-        }
+        //if (saturation.getValue() != rangeValue) {
+        saturation.setValue(rangeValue);
+        setChanged(true);
+        //}
     }
 
     @Override
@@ -173,8 +177,8 @@ public class EHHueLight
         setHueWhite.setDescription("the light " + getPojo().getName() + " changes its hue to white");
         setHueWhite.setReceiver("app.events.sensors.behavior.request.objects");
         setHueWhite.setProperty("object", getPojo().getName());
-        setHueWhite.setProperty("behavior", BEHAVIOR_SATURATION);
-        setHueWhite.setProperty("value", "0");
+        setHueWhite.setProperty("behavior", BEHAVIOR_HUE);
+        setHueWhite.setProperty("value",HUE_WHITE);
 
         Command setHueYellow = new Command();
         setHueYellow.setName(messages.getString("actionhue") + getPojo().getName() + " " + messages.getString("yellow"));
@@ -207,7 +211,7 @@ public class EHHueLight
         setMinBrightness.setProperty("object", getPojo().getName());
         setMinBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
         setMinBrightness.setProperty("value", BRI_MIN);
-        
+
         Command setLowBrightness = new Command();
         setLowBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("lowvalue"));
         setLowBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to low value");
@@ -215,7 +219,7 @@ public class EHHueLight
         setLowBrightness.setProperty("object", getPojo().getName());
         setLowBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
         setLowBrightness.setProperty("value", BRI_LOW);
-        
+
         Command setMedBrightness = new Command();
         setMedBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("medvalue"));
         setMedBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to med value");
@@ -223,7 +227,7 @@ public class EHHueLight
         setMedBrightness.setProperty("object", getPojo().getName());
         setMedBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
         setMedBrightness.setProperty("value", BRI_MED);
-        
+
         Command setHighBrightness = new Command();
         setHighBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("highvalue"));
         setHighBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to high value");
@@ -231,7 +235,7 @@ public class EHHueLight
         setHighBrightness.setProperty("object", getPojo().getName());
         setHighBrightness.setProperty("behavior", BEHAVIOR_BRIGHTNESS);
         setHighBrightness.setProperty("value", BRI_HIGH);
-        
+
         Command setMaxBrightness = new Command();
         setMaxBrightness.setName(messages.getString("actionbrightness") + getPojo().getName() + " " + messages.getString("maxvalue"));
         setMaxBrightness.setDescription("the light " + getPojo().getName() + " changes its brightness to max value");

@@ -1,7 +1,7 @@
 <com.freedomotic.reactions.Command>
   <name>Set Color Light saturation</name>
   <receiver>app.actuators.protocol.energyathome.in</receiver>
-  <description>Changing hue of an E@H Color Light</description>
+  <description>Changing saturation of an E@H Color Light</description>
   <hardwareLevel>true</hardwareLevel>
   <delay>0</delay>
   <timeout>0</timeout>

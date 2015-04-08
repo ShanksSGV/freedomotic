@@ -103,12 +103,11 @@ public class EnergyAtHome extends Protocol {
                     body = "{\"operation\":\"setFalse\"}";
                 }
                 try {
-                    eahc.postToFlex(flexIP + "api/functions/" 
-                    		+ URLEncoder.encode(
-                    				c.getProperty("identifier")
-                    				+ ":" 
-                    				+ Value.DAL_ONOFF,"UTF-8")
-                    		, body);
+                    eahc.postToFlex(flexIP + "api/functions/"
+                            + URLEncoder.encode(
+                                    c.getProperty("identifier")
+                                    + ":"
+                                    + Value.DAL_ONOFF, "UTF-8"), body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
@@ -126,6 +125,8 @@ public class EnergyAtHome extends Protocol {
                     if (c.getProperty("function").equalsIgnoreCase(Value.FD_HUE)) {
                         hue = c.getProperty("value");
                         sat = "254";
+                        if (hue.equals("0"))    //if color is white...
+                            sat = "0";
                         dalfunction = Value.DAL_COLORCONTROL;
                     } else if (c.getProperty("function").equalsIgnoreCase(Value.FD_SAT)) {
                         hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Value.FD_HUE).getValueAsString();
@@ -139,14 +140,14 @@ public class EnergyAtHome extends Protocol {
                 LOG.log(Level.INFO, body);
                 try {
                     eahc.postToFlex(flexIP + "api/functions/"
-                    		+ URLEncoder.encode(
-                    				c.getProperty("identifier")
-                    				+ ":"
-                    				+ dalfunction,"UTF-8")
-                    		, body);
+                            + URLEncoder.encode(
+                                    c.getProperty("identifier")
+                                    + ":"
+                                    + dalfunction, "UTF-8"), body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
+                break;
             }
 
             case "2": { //WashingMachine commands
@@ -170,16 +171,15 @@ public class EnergyAtHome extends Protocol {
                     argsObj.put("value", "3");  //da sostituire con il numero del ciclo associato...
                     args.add(argsObj);
                     json.put("arguments", args);
-                    json.put("operation","setCycle");
+                    json.put("operation", "setCycle");
                     body = json.toJSONString();
                     //body = "{\"operation\":\"execStartCycle\"}";
                 }
                 try {
-                    eahc.postToFlex(flexIP + "api/functions/" 
-                    		+URLEncoder.encode( c.getProperty("identifier")
-                            	+ ":" 
-                            	+ Value.DAL_WASHINGMACHINE,"UTF-8")
-                            , body);
+                    eahc.postToFlex(flexIP + "api/functions/"
+                            + URLEncoder.encode(c.getProperty("identifier")
+                                    + ":"
+                                    + Value.DAL_WASHINGMACHINE, "UTF-8"), body);
                 } catch (IOException ex) {
                     eahc.manageConnectionFailure();
                 }
@@ -195,11 +195,10 @@ public class EnergyAtHome extends Protocol {
                         body = "{\"operation\":\"execStopCycle\"}";
                     }
                     try {
-                        eahc.postToFlex(flexIP + "api/functions/" +
-                        		URLEncoder.encode(c.getProperty("identifier")
-                        				+ ":" 
-                        				+ Value.DAL_OVEN,"UTF-8")
-                                , body);
+                        eahc.postToFlex(flexIP + "api/functions/"
+                                + URLEncoder.encode(c.getProperty("identifier")
+                                        + ":"
+                                        + Value.DAL_OVEN, "UTF-8"), body);
                     } catch (IOException ex) {
                         eahc.manageConnectionFailure();
                     }
