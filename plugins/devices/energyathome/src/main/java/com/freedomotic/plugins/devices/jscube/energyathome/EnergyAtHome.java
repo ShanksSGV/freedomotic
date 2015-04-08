@@ -94,15 +94,17 @@ public class EnergyAtHome extends Protocol {
 
     @Override
     protected void onCommand(Command c) {
+        JSONObject json = new JSONObject();
         String body = null;
         switch (c.getProperty("code")) {
             case "0": { //OnOff commands
                 if (c.getProperty("value").equals("ON")) {
-                    body = "{\"operation\":\"setTrue\"}";
+                    json.put("operation", "setTrue");
                 } else {
-                    body = "{\"operation\":\"setFalse\"}";
+                    json.put("operation", "setFalse");
                 }
                 try {
+                    body = json.toJSONString();
                     eahc.postToFlex(flexIP + "api/functions/"
                             + URLEncoder.encode(
                                     c.getProperty("identifier")
@@ -119,26 +121,46 @@ public class EnergyAtHome extends Protocol {
                 if (c.getProperty("function").equalsIgnoreCase(Value.FD_BRI)) {
                     String bri = c.getProperty("value");
                     dalfunction = Value.DAL_LEVELCONTROL;
-                    body = "{\"operation\":\"setData\",\"arguments\":[{\"type\":\"java.math.BigDecimal\",\"value\":\""
-                            + bri + "\"}]}";
+                    JSONArray args = new JSONArray();
+                    JSONObject argsObj = new JSONObject();
+                    argsObj.put("type", "java.math.BigDecimal");
+                    argsObj.put("value", bri);
+                    args.add(argsObj);
+                    json.put("arguments", args);
+                    json.put("operation", "setData");
                 } else {
                     if (c.getProperty("function").equalsIgnoreCase(Value.FD_HUE)) {
                         hue = c.getProperty("value");
                         sat = "254";
-                        if (hue.equals("0"))    //if color is white...
+                        if (hue.equals("0")) //if color is white...
+                        {
                             sat = "0";
+                        }
                         dalfunction = Value.DAL_COLORCONTROL;
                     } else if (c.getProperty("function").equalsIgnoreCase(Value.FD_SAT)) {
                         hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Value.FD_HUE).getValueAsString();
                         sat = c.getProperty("value");
                         dalfunction = Value.DAL_COLORCONTROL;
                     }
-                    body = "{\"operation\":\"setHS\",\"arguments\":[{\"type\":\"java.lang.Short\",\"value\":\""
-                            + hue + "\"},{\"type\":\"java.lang.Short\",\"value\":\"" + sat + "\"}]}";
+
+                    JSONArray args = new JSONArray();
+                    JSONObject argsObj1 = new JSONObject();
+                    argsObj1.put("type", "java.lang.Short");
+                    argsObj1.put("value", hue);
+                    JSONObject argsObj2 = new JSONObject();
+                    argsObj2.put("type", "java.lang.Short");
+                    argsObj2.put("value", sat);
+                    args.add(argsObj1);
+                    args.add(argsObj2);
+                    json.put("arguments", args);
+                    json.put("operation", "setHS");
+                    //body = "{\"operation\":\"setHS\",\"arguments\":[{\"type\":\"java.lang.Short\",\"value\":\""
+                    //      + hue + "\"},{\"type\":\"java.lang.Short\",\"value\":\"" + sat + "\"}]}";
 
                 }
                 LOG.log(Level.INFO, body);
                 try {
+                    body = json.toJSONString();
                     eahc.postToFlex(flexIP + "api/functions/"
                             + URLEncoder.encode(
                                     c.getProperty("identifier")
@@ -153,18 +175,20 @@ public class EnergyAtHome extends Protocol {
             case "2": { //WashingMachine commands
                 if (c.getProperty("function").equalsIgnoreCase("status")) {
                     if (c.getProperty("value").equals("START")) {
-                        body = "{\"operation\":\"execStartCycle\"}";
+                        json.put("operation", "execStartCycle");
+                        //body = "{\"operation\":\"execStartCycle\"}";
                     }
                     if (c.getProperty("value").equals("STOP")) {
-                        body = "{\"operation\":\"execStopCycle\"}";
+                        json.put("operation", "execStopCycle");
+                        //body = "{\"operation\":\"execStopCycle\"}";
                     }
                     if (c.getProperty("value").equals("DELAY")) {
                         //valutare come passare questo ritardo
                         String delay = c.getProperty("option");
-                        body = "{\"operation\":\"setStartTime\"}";
+                        json.put("operation", "setStartTime");
+                        //body = "{\"operation\":\"setStartTime\"}";
                     }
                 } else if (c.getProperty("function").equalsIgnoreCase("cycle")) {
-                    JSONObject json = new JSONObject();
                     JSONArray args = new JSONArray();
                     JSONObject argsObj = new JSONObject();
                     argsObj.put("type", "java.lang.Short");
@@ -172,10 +196,9 @@ public class EnergyAtHome extends Protocol {
                     args.add(argsObj);
                     json.put("arguments", args);
                     json.put("operation", "setCycle");
-                    body = json.toJSONString();
-                    //body = "{\"operation\":\"execStartCycle\"}";
                 }
                 try {
+                    body = json.toJSONString();
                     eahc.postToFlex(flexIP + "api/functions/"
                             + URLEncoder.encode(c.getProperty("identifier")
                                     + ":"
@@ -189,10 +212,12 @@ public class EnergyAtHome extends Protocol {
             case "3": { //Oven commands
                 if (c.getProperty("function").equalsIgnoreCase("status")) {
                     if (c.getProperty("value").equals("ON")) {
-                        body = "{\"operation\":\"execStartCycle\"}";
+                        json.put("operation", "execStartCycle");
+                        // body = "{\"operation\":\"execStartCycle\"}";
                     }
                     if (c.getProperty("value").equals("OFF")) {
-                        body = "{\"operation\":\"execStopCycle\"}";
+                        json.put("operation", "execStopCycle");
+                        // body = "{\"operation\":\"execStopCycle\"}";
                     }
                     try {
                         eahc.postToFlex(flexIP + "api/functions/"
