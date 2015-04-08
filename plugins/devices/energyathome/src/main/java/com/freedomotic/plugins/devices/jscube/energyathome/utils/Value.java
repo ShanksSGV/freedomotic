@@ -33,5 +33,6 @@ public class Value {
     public static final String FD_HUE = "hue";
     public static final String FD_SAT = "saturation";
     public static final String FD_BRI = "brightness";
+    public static final String FD_COLORLIGHT = "colorlight";
 
 }

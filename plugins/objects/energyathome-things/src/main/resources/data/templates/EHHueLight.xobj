@@ -14,6 +14,7 @@
       <priority>-1</priority>
       <value>false</value>
     </com.freedomotic.model.object.BooleanBehavior>
+<!--
     <com.freedomotic.model.object.RangedIntBehavior>
       <name>hue</name>
       <description>the hue of the light</description>
@@ -34,6 +35,22 @@
       <min>0</min>
       <step>1</step>
     </com.freedomotic.model.object.RangedIntBehavior>
+-->
+<com.freedomotic.model.object.ListBehavior>
+      <name>colorlight</name>
+      <description>Light Color</description>
+      <active>true</active>
+      <priority>-1</priority>
+      <selected>0</selected>
+      <list>
+        <string>Red</string>
+        <string>Blue</string>
+        <string>Green</string>
+        <string>White</string>
+        <string>Yellow</string>
+        <string>Fucsia</string>
+      </list>
+    </com.freedomotic.model.object.ListBehavior>
     <com.freedomotic.model.object.RangedIntBehavior>
       <name>brightness</name>
       <description></description>
@@ -94,8 +111,12 @@
   <actions>
     <property name="turn off" value="Turn off E@H device"/>
     <property name="turn on" value="Turn on E@H device"/>
+<!--
     <property name="set hue" value="Set Color Light hue"/>
     <property name="set saturation" value="Set Color Light saturation"/>
+-->    
+<property name="set color light" value="Select Color light color"/>
+
     <property name="set brightness" value="Set Color Light brightness"/>
   </actions>
   <triggers>

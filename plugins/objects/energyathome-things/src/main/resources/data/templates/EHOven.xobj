@@ -35,7 +35,7 @@
       <intersecable>false</intersecable>
       <offset x="0" y="0"/>
       <rotation>0.0</rotation>
-      <icon>wash_off.png</icon>
+      <icon>oven_off.png</icon>
       <fillColor>#000000</fillColor>
       <textColor>#000000</textColor>
       <borderColor>#000000</borderColor>
@@ -51,7 +51,7 @@
       <intersecable>false</intersecable>
       <offset x="0" y="0"/>
       <rotation>0.0</rotation>
-      <icon>wash_on.png</icon>
+      <icon>oven_on.png</icon>
       <fillColor>#000000</fillColor>
       <textColor>#000000</textColor>
       <borderColor>#000000</borderColor>

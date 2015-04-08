@@ -128,21 +128,22 @@ public class EnergyAtHome extends Protocol {
                     args.add(argsObj);
                     json.put("arguments", args);
                     json.put("operation", "setData");
-                } else {
-                    if (c.getProperty("function").equalsIgnoreCase(Value.FD_HUE)) {
-                        hue = c.getProperty("value");
-                        sat = "254";
-                        if (hue.equals("0")) //if color is white...
-                        {
-                            sat = "0";
+                }
+                if (c.getProperty("function").equalsIgnoreCase(Value.FD_COLORLIGHT)) {
+                    dalfunction = Value.DAL_COLORCONTROL;
+                    switch (c.getProperty("value")) {
+                        case "Red": {
+                            hue = "254";
+                            sat = "254";
+                            break;
                         }
-                        dalfunction = Value.DAL_COLORCONTROL;
-                    } else if (c.getProperty("function").equalsIgnoreCase(Value.FD_SAT)) {
-                        hue = thingsRepository.findByAddress(protocolName, c.getProperty("identifier")).get(0).getBehavior(Value.FD_HUE).getValueAsString();
-                        sat = c.getProperty("value");
-                        dalfunction = Value.DAL_COLORCONTROL;
-                    }
+                        case "Blue": {
+                            hue = "170";
+                            sat = "254";
+                            break;
+                        }
 
+                    }
                     JSONArray args = new JSONArray();
                     JSONObject argsObj1 = new JSONObject();
                     argsObj1.put("type", "java.lang.Short");
@@ -154,9 +155,6 @@ public class EnergyAtHome extends Protocol {
                     args.add(argsObj2);
                     json.put("arguments", args);
                     json.put("operation", "setHS");
-                    //body = "{\"operation\":\"setHS\",\"arguments\":[{\"type\":\"java.lang.Short\",\"value\":\""
-                    //      + hue + "\"},{\"type\":\"java.lang.Short\",\"value\":\"" + sat + "\"}]}";
-
                 }
                 LOG.log(Level.INFO, body);
                 try {
@@ -176,17 +174,14 @@ public class EnergyAtHome extends Protocol {
                 if (c.getProperty("function").equalsIgnoreCase("status")) {
                     if (c.getProperty("value").equals("START")) {
                         json.put("operation", "execStartCycle");
-                        //body = "{\"operation\":\"execStartCycle\"}";
                     }
                     if (c.getProperty("value").equals("STOP")) {
                         json.put("operation", "execStopCycle");
-                        //body = "{\"operation\":\"execStopCycle\"}";
                     }
                     if (c.getProperty("value").equals("DELAY")) {
                         //valutare come passare questo ritardo
                         String delay = c.getProperty("option");
                         json.put("operation", "setStartTime");
-                        //body = "{\"operation\":\"setStartTime\"}";
                     }
                 } else if (c.getProperty("function").equalsIgnoreCase("cycle")) {
                     JSONArray args = new JSONArray();
@@ -213,13 +208,12 @@ public class EnergyAtHome extends Protocol {
                 if (c.getProperty("function").equalsIgnoreCase("status")) {
                     if (c.getProperty("value").equals("ON")) {
                         json.put("operation", "execStartCycle");
-                        // body = "{\"operation\":\"execStartCycle\"}";
                     }
                     if (c.getProperty("value").equals("OFF")) {
                         json.put("operation", "execStopCycle");
-                        // body = "{\"operation\":\"execStopCycle\"}";
                     }
                     try {
+                        body = json.toJSONString();
                         eahc.postToFlex(flexIP + "api/functions/"
                                 + URLEncoder.encode(c.getProperty("identifier")
                                         + ":"
