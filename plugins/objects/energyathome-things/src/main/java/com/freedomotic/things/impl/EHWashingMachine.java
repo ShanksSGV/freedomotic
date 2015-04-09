@@ -114,7 +114,7 @@ public class EHWashingMachine extends ElectricDevice {
         start.setProperty("behavior", BEHAVIOR_POWERED);
         start.setProperty("value", BooleanBehavior.VALUE_TRUE);
 
-        Command startdelay30 = new Command();
+        /*Command startdelay30 = new Command();
         startdelay30.setName(messages.getString("start") + getPojo().getName() + " " + messages.getString("delay30"));
         startdelay30.setReceiver("app.events.sensors.behavior.request.objects");
         startdelay30.setProperty("object", getPojo().getName());
@@ -126,7 +126,7 @@ public class EHWashingMachine extends ElectricDevice {
         startdelay60.setReceiver("app.events.sensors.behavior.request.objects");
         startdelay60.setProperty("object", getPojo().getName());
         startdelay60.setProperty("behavior", BEHAVIOR_DELAY);
-        startdelay60.setProperty("value", "60");
+        startdelay60.setProperty("value", "60");*/
 
         Command stop = new Command();
         stop.setName(messages.getString("stop") + getPojo().getName());
@@ -136,8 +136,8 @@ public class EHWashingMachine extends ElectricDevice {
         stop.setProperty("value", BooleanBehavior.VALUE_FALSE);
 
         commandRepository.create(start);
-        commandRepository.create(startdelay30);
-        commandRepository.create(startdelay60);
+        //commandRepository.create(startdelay30);
+        //commandRepository.create(startdelay60);
         commandRepository.create(stop);
 
     }

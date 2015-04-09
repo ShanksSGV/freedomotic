@@ -2,14 +2,14 @@
     <properties>
         <property name="description"            value="Energy@Home Plugin"/>
         <property name="protocol.name"		value="energyathome"/>
-        <property name="version"                value="3.1"/>
+        <property name="version"                value="3.4"/>
         <property name="required"               value="5.4"/>
         <property name="category"               value="protocol"/>
         <property name="short-name"             value="energyathome"/>
         <property name="startup-time" 		value="on load"/>
-        <property name="flexIP"			value="http://localhost:8080/"/> 
-        <property name="flexWS"                 value="ws://localhost:8080/ws"/>
-        <property name="log"                    value="true"/>
+        <property name="flexIP"			value="http://192.168.1.71:8080/"/> 
+        <property name="flexWS"                 value="ws://192.168.1.71:8080/ws"/>
+        <property name="log"                    value="false"/>
         <property name="pollingtime"		value="600000"/>  
     </properties>
 </config>

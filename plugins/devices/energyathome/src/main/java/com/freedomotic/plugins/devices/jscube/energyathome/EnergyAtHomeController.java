@@ -140,7 +140,7 @@ public class EnergyAtHomeController implements MessageListener {
     protected boolean getStatus(String address) throws IOException {
         boolean status = false;
         String body = "{\"operation\":\"getData\"}";
-        String line = postToFlex(flexIP + "api/functions/" + URLEncoder.encode(address + ":OnOff","UTF-8"), body);
+        String line = postToFlex(flexIP + "api/functions/" + URLEncoder.encode(address + ":OnOff", "UTF-8"), body);
         try {
             Object obj = parser.parse(line);
             JSONObject json = (JSONObject) obj;
@@ -187,7 +187,7 @@ public class EnergyAtHomeController implements MessageListener {
      */
     protected String postToFlex(String urlToInvoke, String body) throws IOException {
         try {
-        	URI uri=new URI(urlToInvoke);
+            URI uri = new URI(urlToInvoke);
             url = uri.toURL();
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
@@ -213,14 +213,13 @@ public class EnergyAtHomeController implements MessageListener {
                     "Malformed URL! Please check IP address in manifest.xml!");
 
         } catch (URISyntaxException e) {
-			LOG.log(Level.INFO,
-					"Bad url syntax:"+urlToInvoke);
-			e.printStackTrace();
-		}
+            LOG.log(Level.INFO,
+                    "Bad url syntax:" + urlToInvoke);
+            e.printStackTrace();
+        }
         return null;
     }
 
-    
     /**
      * Counts API connection failures and marks the plugin as FAILED if the max
      * number of subsequent failed connection is reached.
@@ -263,23 +262,45 @@ public class EnergyAtHomeController implements MessageListener {
         String dalFunctionId;
         try {
             Object obj = parser.parse(me.getBody());
-            JSONObject json = (JSONObject)obj;
-            JSONObject properties = (JSONObject)json.get("properties");
-            String temp = (String)properties.get("dal.function.UID");
+            JSONObject json = (JSONObject) obj;
+            JSONObject properties = (JSONObject) json.get("properties");
+            String temp = (String) properties.get("dal.function.UID");
             int i = temp.lastIndexOf(":");
             address = temp.substring(0, i);
             dalFunctionId = temp.substring(i + 1);
-            String property = (String)properties.get("dal.function.property.name");
+            String property = (String) properties.get("dal.function.property.name");
             if (dalFunctionId.equalsIgnoreCase(Value.DAL_ONOFF)) {
-                value = ((JSONObject)properties.get("dal.function.property.value")).get("value").toString();
+                value = ((JSONObject) properties.get("dal.function.property.value")).get("value").toString();
                 eah.buildEvent(null, address, Value.FD_POWER, value, null);
             }
             if (dalFunctionId.equalsIgnoreCase(Value.DAL_ENERGYMETER)) {
                 if (property.equalsIgnoreCase("current")) {
-                    value = ((JSONObject)properties.get("dal.function.property.value")).get("level").toString();
+                    value = ((JSONObject) properties.get("dal.function.property.value")).get("level").toString();
                     value = String.valueOf(Double.valueOf(value) * 10); //only way to have the decimal 
 
                     eah.buildEvent(null, address, Value.FD_POWERCONSUMPTION, value, null);
+                }
+            }
+            if (dalFunctionId.equalsIgnoreCase(Value.DAL_WASHINGMACHINE)) {
+                if (property.equalsIgnoreCase("ApplianceStatus")) {
+                    value = ((JSONObject) properties.get("dal.function.property.value")).get("level").toString();
+                    if (value.equals("5")) {
+                        eah.buildEvent(null, address, Value.FD_POWER, "true", null);
+                    }
+                    else{
+                        eah.buildEvent(null, address, Value.FD_POWER, "false", null);
+                    }
+                }
+            }
+            if (dalFunctionId.equalsIgnoreCase(Value.DAL_OVEN)) {
+                if (property.equalsIgnoreCase("ApplianceStatus")) {
+                    value = ((JSONObject) properties.get("dal.function.property.value")).get("level").toString();
+                    if (value.equals("5")) {
+                        eah.buildEvent(null, address, Value.FD_POWER, "true", null);
+                    }
+                    else{
+                        eah.buildEvent(null, address, Value.FD_POWER, "false", null);
+                    }
                 }
             }
 

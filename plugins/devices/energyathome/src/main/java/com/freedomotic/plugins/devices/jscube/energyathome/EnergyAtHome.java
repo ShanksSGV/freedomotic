@@ -142,6 +142,26 @@ public class EnergyAtHome extends Protocol {
                             sat = "254";
                             break;
                         }
+                        case "Green": {
+                            hue = "85";
+                            sat = "254";
+                            break;
+                        }
+                        case "White": {
+                            hue = "0";
+                            sat = "0";
+                            break;
+                        }
+                        case "Yellow": {
+                            hue = "50";
+                            sat = "254";
+                            break;
+                        }
+                        case "Fucsia": {
+                            hue = "220";
+                            sat = "254";
+                            break;
+                        }
 
                     }
                     JSONArray args = new JSONArray();
