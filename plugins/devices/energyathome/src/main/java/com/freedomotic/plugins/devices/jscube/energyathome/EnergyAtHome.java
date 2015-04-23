@@ -244,6 +244,22 @@ public class EnergyAtHome extends Protocol {
                 }
                 break;
             }
+            case "4": { //DoorLock commands
+                if (c.getProperty("value").equals("OPEN")) {
+                    json.put("operation", "open");
+                } else {
+                    json.put("operation", "close");
+                }
+                try {
+                    body = json.toJSONString();
+                    eahc.postToFlex(flexIP + "api/functions/"
+                            + URLEncoder.encode(c.getProperty("identifier")
+                                    + ":"
+                                    + Value.DAL_DOORLOCK, "UTF-8"), body);
+                } catch (IOException ex) {
+                    eahc.manageConnectionFailure();
+                }
+            }
         }
     }
 

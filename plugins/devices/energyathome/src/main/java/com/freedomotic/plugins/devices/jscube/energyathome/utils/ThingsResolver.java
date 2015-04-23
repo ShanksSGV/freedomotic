@@ -27,6 +27,9 @@ public class ThingsResolver {
         }
         if ((line.contains(Value.DAL_OVEN)) && (line.contains(Value.DAL_ENERGYMETER))) {
             return Value.FD_OVEN;
+        }
+        if ((line.contains(Value.DAL_DOORLOCK))) {
+            return Value.FD_DOORLOCK;
         } else {
             return null;
         }

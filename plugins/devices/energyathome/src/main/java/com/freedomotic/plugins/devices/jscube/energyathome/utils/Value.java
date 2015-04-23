@@ -20,12 +20,14 @@ public class Value {
     public static final String DAL_LEVELCONTROL = "MultiLevelControl";
     public static final String DAL_WASHINGMACHINE = "WashingMachine";
     public static final String DAL_OVEN = "Oven";
+    public static final String DAL_DOORLOCK = "DoorLock";
 
     //Freedomotic model objects
     public static final String FD_SMARTPLUG = "EHSmartPlug";
     public static final String FD_HUELIGHT = "EHHueLight";
     public static final String FD_WASHINGMACHINE = "EHWashingMachine";
     public static final String FD_OVEN = "EHOven";
+    public static final String FD_DOORLOCK = "EHDoorLock";
 
     //Freedomotic model behavior
     public static final String FD_POWER = "powered";
@@ -34,5 +36,6 @@ public class Value {
     public static final String FD_SAT = "saturation";
     public static final String FD_BRI = "brightness";
     public static final String FD_COLORLIGHT = "colorlight";
+    public static final String FD_DOORSTATUS = "status";
 
 }
