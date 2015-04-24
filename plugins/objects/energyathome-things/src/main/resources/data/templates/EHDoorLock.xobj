@@ -2,7 +2,7 @@
   <name>EHDoorLock</name>
   <description>An Energy@Home Door Lock</description>
   <actAs>unimplemented</actAs>
-  <type>EnvObject.DoorLock</type>
+  <type>EnvObject.EHDoorLock</type>
   <hierarchy>com.freedomotic.things.impl.EHDoorLock</hierarchy>
   <protocol>energyathome</protocol>
   <phisicalAddress>unknown</phisicalAddress>
