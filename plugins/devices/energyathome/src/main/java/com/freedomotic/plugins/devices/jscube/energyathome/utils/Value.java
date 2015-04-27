@@ -13,6 +13,10 @@ package com.freedomotic.plugins.devices.jscube.energyathome.utils;
  */
 public class Value {
 
+    //Energy@Home APi
+    public static final String API_DEVICES = "api/devices";
+    public static final String API_FUNCTIONS = "api/functions/";
+
     //Energy@Home DAL Functions
     public static final String DAL_ONOFF = "OnOff";
     public static final String DAL_ENERGYMETER = "EnergyMeter";

@@ -25,6 +25,8 @@ import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageEvent;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.MessageListener;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.ThingsResolver;
 import com.freedomotic.plugins.devices.jscube.energyathome.utils.Value;
+import com.freedomotic.things.EnvObjectLogic;
+import com.freedomotic.things.ThingRepository;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -43,6 +45,7 @@ import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -83,7 +86,7 @@ public class EnergyAtHomeController implements MessageListener {
      * @throws java.io.IOException
      */
     protected boolean getDevices() throws IOException {
-        String line = getToFlex(flexIP + "api/devices");
+        String line = getToFlex(flexIP + Value.API_DEVICES);
         try {
             Object obj = parser.parse(line);
             JSONArray json = (JSONArray) obj;
@@ -123,7 +126,7 @@ public class EnergyAtHomeController implements MessageListener {
      * @throws java.io.IOException
      */
     protected String getType(String address) throws IOException {
-        String line = getToFlex(flexIP + "api/devices/" + address
+        String line = getToFlex(flexIP + Value.API_DEVICES + "/" + address
                 + "/functions");
 
         String type = ThingsResolver.resolver(line);
@@ -140,7 +143,7 @@ public class EnergyAtHomeController implements MessageListener {
     protected boolean getStatus(String address) throws IOException {
         boolean status = false;
         String body = "{\"operation\":\"getData\"}";
-        String line = postToFlex(flexIP + "api/functions/" + URLEncoder.encode(address + ":OnOff", "UTF-8"), body);
+        String line = postToFlex(flexIP + Value.API_FUNCTIONS + URLEncoder.encode(address + ":OnOff", "UTF-8"), body);
         try {
             Object obj = parser.parse(line);
             JSONObject json = (JSONObject) obj;
@@ -286,8 +289,7 @@ public class EnergyAtHomeController implements MessageListener {
                     value = ((JSONObject) properties.get("dal.function.property.value")).get("level").toString();
                     if (value.equals("5")) {
                         eah.buildEvent(null, address, Value.FD_POWER, "true", null);
-                    }
-                    else{
+                    } else {
                         eah.buildEvent(null, address, Value.FD_POWER, "false", null);
                     }
                 }
@@ -297,8 +299,7 @@ public class EnergyAtHomeController implements MessageListener {
                     value = ((JSONObject) properties.get("dal.function.property.value")).get("level").toString();
                     if (value.equals("5")) {
                         eah.buildEvent(null, address, Value.FD_POWER, "true", null);
-                    }
-                    else{
+                    } else {
                         eah.buildEvent(null, address, Value.FD_POWER, "false", null);
                     }
                 }
@@ -306,6 +307,44 @@ public class EnergyAtHomeController implements MessageListener {
 
         } catch (ParseException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * This method keep synchronized objects that don't send WS messages on
+     * behavior change.
+     *
+     * @param tr
+     * @param protocolName
+     */
+    protected void updateObjects(ThingRepository tr, String protocolName) {
+        List<EnvObjectLogic> eahObjects = tr.findByProtocol(protocolName);
+        Iterator i = eahObjects.iterator();
+        while (i.hasNext()) {
+            EnvObjectLogic eahObject = (EnvObjectLogic) i.next();
+            String address = eahObject.getPojo().getPhisicalAddress();
+            String type = eahObject.getPojo().getSimpleType();
+            try {
+                if (type.equalsIgnoreCase(Value.FD_DOORLOCK)) {
+                    String url = (flexIP + Value.API_FUNCTIONS + URLEncoder.encode(address + ":DoorLock", "UTF-8"));
+                    JSONObject json = new JSONObject();
+                    json.put("operation", "getStatus");
+                    String body = json.toJSONString();
+                    Object object = parser.parse(postToFlex(url, body));
+                    JSONObject response = (JSONObject) object;
+                    JSONObject result = (JSONObject) response.get("result");
+                    String status = (String) result.get("status");
+                    if (status.equals("OPEN")) {
+                        eah.buildEvent(null, address, Value.FD_DOORSTATUS, "true", null);
+                    } else {
+                        eah.buildEvent(null, address, Value.FD_DOORSTATUS, "false", null);
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(EnergyAtHomeController.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ParseException ex) {
+                Logger.getLogger(EnergyAtHomeController.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 

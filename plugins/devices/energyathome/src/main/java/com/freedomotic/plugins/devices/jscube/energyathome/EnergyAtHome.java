@@ -54,8 +54,12 @@ public class EnergyAtHome extends Protocol {
     private final String flexIP = configuration.getProperty("flexIP");
     private final String flexWS = configuration.getProperty("flexWS");
     private final boolean saveToLog = configuration.getBooleanProperty("log", false);
+    private final boolean updateOnPolling = configuration.getBooleanProperty("polling", false);
     private final String protocolName = configuration.getProperty("protocol.name");
     private final int POLLING_TIME = configuration.getIntProperty("pollingtime", 5000);
+
+    private final int wsPolling = 10;
+    private int counter = 0;
 
     private static final Logger LOG = Logger.getLogger(EnergyAtHome.class.getName());
 
@@ -84,6 +88,7 @@ public class EnergyAtHome extends Protocol {
             throw new PluginStartupException("Cannot register to Scubox WebSocket Endpoint");
         }
         setDescription("Energy@Home plugin connected!");
+        counter = 0;
     }
 
     @Override
@@ -105,7 +110,7 @@ public class EnergyAtHome extends Protocol {
                 }
                 try {
                     body = json.toJSONString();
-                    eahc.postToFlex(flexIP + "api/functions/"
+                    eahc.postToFlex(flexIP + Value.API_FUNCTIONS
                             + URLEncoder.encode(
                                     c.getProperty("identifier")
                                     + ":"
@@ -179,7 +184,7 @@ public class EnergyAtHome extends Protocol {
                 LOG.log(Level.INFO, body);
                 try {
                     body = json.toJSONString();
-                    eahc.postToFlex(flexIP + "api/functions/"
+                    eahc.postToFlex(flexIP + Value.API_FUNCTIONS
                             + URLEncoder.encode(
                                     c.getProperty("identifier")
                                     + ":"
@@ -214,7 +219,7 @@ public class EnergyAtHome extends Protocol {
                 }
                 try {
                     body = json.toJSONString();
-                    eahc.postToFlex(flexIP + "api/functions/"
+                    eahc.postToFlex(flexIP + Value.API_FUNCTIONS
                             + URLEncoder.encode(c.getProperty("identifier")
                                     + ":"
                                     + Value.DAL_WASHINGMACHINE, "UTF-8"), body);
@@ -234,7 +239,7 @@ public class EnergyAtHome extends Protocol {
                     }
                     try {
                         body = json.toJSONString();
-                        eahc.postToFlex(flexIP + "api/functions/"
+                        eahc.postToFlex(flexIP + Value.API_FUNCTIONS
                                 + URLEncoder.encode(c.getProperty("identifier")
                                         + ":"
                                         + Value.DAL_OVEN, "UTF-8"), body);
@@ -252,7 +257,7 @@ public class EnergyAtHome extends Protocol {
                 }
                 try {
                     body = json.toJSONString();
-                    eahc.postToFlex(flexIP + "api/functions/"
+                    eahc.postToFlex(flexIP + Value.API_FUNCTIONS
                             + URLEncoder.encode(c.getProperty("identifier")
                                     + ":"
                                     + Value.DAL_DOORLOCK, "UTF-8"), body);
@@ -270,7 +275,14 @@ public class EnergyAtHome extends Protocol {
 
     @Override
     protected void onRun() {
-        eahc.updateWebSocket(flexWS);
+        counter++;
+        if (counter == 10) {
+            eahc.updateWebSocket(flexWS);
+            counter = 0;
+        }
+        if (updateOnPolling) {
+            eahc.updateObjects(thingsRepository, protocolName);    //update e@h obects that don't send ws messages
+        }
     }
 
     /**
